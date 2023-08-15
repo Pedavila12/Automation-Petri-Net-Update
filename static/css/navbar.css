@@ -1,0 +1,65 @@
+.navbar {
+    overflow: hidden;
+    margin: 0;
+    --color-bg: var(--color-navbar-bg);
+    --color-bg-focus: var(--color-navbar-bg-hover);
+    --color-text: var(--color-text-navbar);
+
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    border-bottom: 1px solid var(--color-border)
+}
+
+.navbar button, .navbar a {
+    font-size: 14px;  
+    padding: 0.25rem 0.5rem;
+    background-color: inherit;
+    color: inherit;
+}
+
+.navbar button {
+    border: none;
+    outline: none;
+    font-family: inherit;
+    margin: 0;
+}
+
+.navbar a {
+    float: left;
+    text-align: center;
+    text-decoration: none;
+}
+
+.dropdown {
+    float: left;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+.navbar a:hover, .dropdown:hover .dropbtn, .navbar button:hover {
+    background-color: var(--color-bg-focus);
+}
+
+.dropdown-content {
+    display: none;
+    position: absolute;
+    background-color: var(--color-bg);
+    min-width: 10rem;
+    box-shadow: 0 0.5rem 1rem 0 rgba(0,0,0,0.2);
+    z-index: 1;
+}
+
+.dropdown-content a {
+    float: none;
+    padding: 0.375rem 1rem;
+    display: block;
+    text-align: left;
+}
+
+.dropdown-content a:hover {
+    background-color: var(--color-bg-focus);
+}
+
+.dropdown:hover .dropdown-content {
+    display: block;
+}

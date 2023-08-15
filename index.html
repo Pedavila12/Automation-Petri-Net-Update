@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Automation Petri Net</title>
+    <link rel="icon" type="image/x-icon" href="static/icons/favicon.svg">
+    <link rel="stylesheet" href="static/css/main.css">
+    <link rel="stylesheet" href="static/css/theme.css">
+    <link rel="stylesheet" href="static/css/navbar.css">
+    <link rel="stylesheet" href="static/css/toolbar.css">
+    <link rel="stylesheet" href="static/css/sidebar.css">
+    <link rel="stylesheet" href="static/css/modal.css">
+    <link rel="stylesheet" href="static/css/inputs-config-modal.css">
+    <link rel="stylesheet" href="static/css/sim-config.css">
+    <link rel="stylesheet" href="static/css/welcome-window.css">
+    <style>
+        body {
+            font-family: Arial, Helvetica, sans-serif;
+            overflow: hidden;
+            user-select: none;
+            width: 100vw;
+            height: 100vh;
+            margin: 0;
+        }
+
+        .flex-row {
+            display: flex;
+            flex-direction: row;
+            height: 100%;
+        }
+
+        .editor {
+            position: absolute;
+            left: 13rem;
+            width: 100%;
+            height: 100%;
+        }
+
+        #svg-div {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            border-bottom: 2px solid black;
+        }
+
+        text {
+            font-size: 4.5pt;
+            -webkit-user-select: none;
+            -moz-user-select: none;
+            -ms-user-select: none;
+            user-select: none;
+        }
+
+        #pw-div label {
+            display: block;
+            padding-top: 10px;
+        }
+
+        #simulating-text, #simulation-time {
+            color: var(--color-text-primary);
+            align-self: center;
+            padding-left: 1rem;
+        }
+
+        #gencode-modal .modal-content .modal-body {
+            height: 60vh;
+            /* padding-top: 10px; */
+            padding-bottom: 10px;
+            display: block;
+        }
+
+        #gencode-out {
+            width: 100%;
+            height: 100%;
+        }        
+
+        #alpha-version {
+            color: rgb(179, 179, 15);
+            float: right;
+            margin: 6px 6px 0 0;
+            padding-inline: 2px;
+            font-size: 11pt;
+            border: 1px solid rgb(179, 179, 15);
+            border-radius: 3px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="navbar">
+        <div class="dropdown">
+            <button class="dropbtn">File
+                <i class="fa fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <a id="nav-btn-new-file">New</a>
+                <a id="nav-btn-load-file" style="display: none;">Load</a>
+                <a id="nav-btn-save-file" style="display: none;">Save</a>
+                <!-- <a idnav-btn-="save-as">Save as</a> -->
+                <a onclick="document.getElementById('nav-btn-import').click()">Load</a>
+                <input id="nav-btn-import" type="file" style="display: none;">
+                <a id="nav-btn-export" href="" download="my_net.txt">Save</a>
+                <a id="nav-btn-close-file">Close</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <button class="dropbtn">View
+                <i class="fa fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <a id="nav-btn-toggle-grid">Toggle Grid</a>
+                <a id="nav-btn-toggle-theme">Toggle Theme</a>
+            </div>
+        </div>
+        <div class="dropdown">
+            <button class="dropbtn">Simulation
+                <i class="fa fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <a>Run</a>
+                <a>Step</a>
+                <a>Restart</a>
+                <a id="nav-btn-sim-config">Configuration</a>
+            </div>
+        </div>
+        <button id="nav-btn-inputs-config">Inputs</button>
+        <button id="nav-btn-gencode">Generate Code</button>
+
+        <span id="alpha-version" >Alpha Version</span>
+    </div>
+
+    <div id="tool-bar">
+        <svg id="mouse-tool" xmlns="http://www.w3.org/2000/svg" class="tool-bar-item selected-tool-bar-item"
+            viewBox="0 0 38 38">
+            <path d="M4 0l16 12.279-6.951 1.17 4.325 8.817-3.596 1.734-4.35-8.879-5.428 4.702z" fill="white"
+                stroke="black" transform="translate(7 7)" />
+        </svg>
+        <svg id="place-tool" class="tool-bar-item" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <circle cx="50" cy="50" r="28" fill="var(--bg-color)" stroke="var(--color)" stroke-width="4" />
+        </svg>
+        <svg id="trans-tool" class="tool-bar-item" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <rect x="-27.5" y="-15" width="55" height="30" transform="translate(50 50)" fill="var(--color)" stroke="var(--color)" />
+        </svg>
+
+        <svg id="arc-tool" class="tool-bar-item" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <line x1="20" y1="20" x2="70" y2="70" stroke="var(--color)" stroke-width="4" />
+            <polygon points="80,80 70,60 60,70" stroke="var(--color)" fill="var(--color)" stroke-width="4" />
+        </svg>
+
+        <div class="tool-bar-separation"></div>
+
+        <svg id="sim-btn-restart" xmlns="http://www.w3.org/2000/svg" class="tool-bar-item" viewBox="0 0 38 38">
+            <g transform="translate(6 6)" stroke="var(--color)" fill="var(--color)">
+                <path
+                    d="M20,12c0,4.411-3.589,8-8,8s-8-3.589-8-8c0-2.52,1.174-4.768,3-6.235V3.353C4.016,5.085,2,8.309,2,12c0,5.514,4.486,10,10,10s10-4.486,10-10S17.514,2,12,2v2C16.411,4,20,7.589,20,12z"
+                    stroke-width="0.5" />
+                <path d="M2 2L9 2 9 9z" stroke-width="0.5" />
+            </g>
+
+        </svg>
+
+        <svg id="sim-btn-start" xmlns="http://www.w3.org/2000/svg" class="tool-bar-item" viewBox="0 0 26 26">
+            <path d="M -6 -6 L 5 0 L -6 6, L -6 6" fill="var(--color)" transform="translate(13 13)" />
+        </svg>
+
+        <svg id="sim-btn-step" xmlns="http://www.w3.org/2000/svg" class="tool-bar-item" viewBox="0 0 34 34">
+            <g transform="translate(12 17)" fill="var(--color)">
+                <path d="M -6 -6 L 5 0 L -6 6, L -6 6" />
+                <rect x="6" y="-6" width="4" height="12" />
+                <rect x="12" y="-6" width="4" height="12" />
+            </g>
+        </svg>
+        <!-- <svg id="sim-btn-debug" xmlns="http://www.w3.org/2000/svg" class="tool-bar-item" viewBox="0 0 34 34">
+            <g transform="translate(12 17)">
+                <path d="M -6 -6 L 5 0 L -6 6, L -6 6" />
+                <rect x="6" y="-6" width="4" height="12" />
+                <rect x="12" y="-6" width="4" height="12" />
+            </g>
+            <g transform="scale(0.01) translate(2048 1900)" fill="#cf2525">
+                <path d="M1022.06544 583.40119c0 11.0558-4.034896 20.61962-12.111852 28.696576-8.077979 8.077979-17.639752 12.117992-28.690436 12.117992L838.446445 624.215758c0 72.690556-14.235213 134.320195-42.718941 184.89915l132.615367 133.26312c8.076956 8.065699 12.117992 17.634636 12.117992 28.690436 0 11.050684-4.034896 20.614503-12.117992 28.691459-7.653307 8.065699-17.209964 12.106736-28.690436 12.106736-11.475356 0-21.040199-4.041036-28.690436-12.106736L744.717737 874.15318c-2.124384 2.118244-5.308913 4.88424-9.558703 8.283664-4.259 3.3984-13.180184 9.463536-26.78504 18.171871-13.598716 8.715499-27.415396 16.473183-41.439808 23.276123-14.029528 6.797823-31.462572 12.966313-52.289923 18.49319-20.827351 5.517667-41.446971 8.28571-61.842487 8.28571L552.801776 379.38668l-81.611739 0 0 571.277058c-21.668509 0-43.250036-2.874467-64.707744-8.615215-21.473057-5.734608-39.960107-12.749372-55.476499-21.039175-15.518438-8.289804-29.541827-16.572444-42.077328-24.867364-12.541641-8.290827-21.781072-15.193027-27.739784-20.714787l-9.558703-8.93244L154.95056 998.479767c-8.500605 8.921183-18.699897 13.386892-30.606065 13.386892-10.201339 0-19.335371-3.40454-27.409257-10.202363-8.079002-7.652284-12.437264-17.10968-13.080923-28.372188-0.633427-11.263531 2.659573-21.143553 9.893324-29.647227l128.787178-144.727219c-24.650423-48.464805-36.980239-106.699114-36.980239-174.710091L42.738895 624.207571c-11.057847 0-20.61655-4.041036-28.690436-12.111852-8.079002-8.082072-12.120039-17.640776-12.120039-28.696576 0-11.050684 4.041036-20.61962 12.120039-28.689413 8.073886-8.072863 17.632589-12.107759 28.690436-12.107759l142.81466 0L185.553555 355.156836l-110.302175-110.302175c-8.074909-8.077979-12.113899-17.640776-12.113899-28.691459 0-11.04966 4.044106-20.61962 12.113899-28.690436 8.071839-8.076956 17.638729-12.123109 28.691459-12.123109 11.056823 0 20.612457 4.052293 28.692482 12.123109l110.302175 110.302175 538.128077 0 110.303198-110.302175c8.070816-8.076956 17.632589-12.123109 28.690436-12.123109 11.050684 0 20.617573 4.052293 28.689413 12.123109 8.077979 8.070816 12.119015 17.640776 12.119015 28.690436 0 11.050684-4.041036 20.614503-12.119015 28.691459l-110.302175 110.302175 0 187.448206 142.815683 0c11.0558 0 20.618597 4.034896 28.690436 12.113899 8.076956 8.069793 12.117992 17.638729 12.117992 28.683273l0 0L1022.06544 583.40119 1022.06544 583.40119zM716.021162 216.158085 307.968605 216.158085c0-56.526411 19.871583-104.667851 59.616796-144.414087 39.733956-39.746236 87.88256-59.611679 144.411017-59.611679 56.529481 0 104.678084 19.865443 144.413064 59.611679C696.156742 111.48921 716.021162 159.631674 716.021162 216.158085L716.021162 216.158085 716.021162 216.158085 716.021162 216.158085z"/>
+            </g>
+        </svg> -->
+
+        <svg id="sim-btn-pause" class="tool-bar-item" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <g fill="var(--color)">
+                <rect x=25 y=25 width=20 height="50" />
+                <rect x=55 y=25 width=20 height="50" />
+            </g>
+        </svg>
+
+        <svg id="sim-btn-stop" class="tool-bar-item" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+            <rect x=25 y=25 width=50 height="50" fill="var(--color)" />
+        </svg>
+
+        <span id="simulating-text"></span>
+        <span id="simulation-time"></span>
+    </div>
+
+    <dialog id="gencode-modal" class="modal">
+        <div class="modal-header">
+            <h2>Generated Code</h2>
+            <span id="gencode-modal-close" class="modal-close">&times;</span>
+        </div>
+        <textarea id="gencode-out" cols="50" rows="10"></textarea>
+        <div class="modal-footer">
+            <button id="gencode-close" class="btn btn-secondary">Close</button>
+        </div>
+    </dialog>
+
+    <dialog id="inputs-modal" class="modal">
+        <template id="input-row">
+            <tr>
+                <td><input type="checkbox"></td>
+                <td><input type="text"></td>
+                <td>
+                    <select>
+                        <option value="BOOL">BOOL</option>
+                        <option value="INT">INT</option>
+                    </select>
+                </td>
+                <td><input type="text" style="width: 100%;"></td>
+                <td><input type="text"></td>
+            </tr>
+        </template>
+
+        <div class="modal-header">
+            <h2>Inputs Configuration</h2>
+            <span id="inputs-modal-close" class="modal-close">&times;</span>
+        </div>
+        <div style="min-height: 10rem;">
+            <div class="input-buttons">
+                <button id="new-input-button" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewbox="0 0 48 48">
+                        <path fill="white" d="M22.5 38V25.5H10V22.5H22.5V10H25.5V22.5H38V25.5H25.5V38Z"/>
+                    </svg>
+                    Add
+                </button>
+                <button id="remove-inputs-button" class="btn btn-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48">
+                        <path fill="white" d="M15 39H33Q33 39 33 39Q33 39 33 39V15H15V39Q15 39 15 39Q15 39 15 39ZM10.5 11V8H17.2L19.2 6H28.8L30.8 8H37.5V11ZM15 42Q13.8 42 12.9 41.1Q12 40.2 12 39V12H36V39Q36 40.2 35.1 41.1Q34.2 42 33 42ZM15 39H33Q33 39 33 39Q33 39 33 39H15Q15 39 15 39Q15 39 15 39Z"/>
+                    </svg>
+                    Remove
+                </button>
+            </div>
+            <table id="inputs-config-table">
+                <thead>
+                    <tr>
+                        <th style="width: 20px; padding: 3px;">
+                            <input type="checkbox">
+                        </th>
+                        <th style="width: 180px;">Name</th>
+                        <th style="width: auto;">Type</th>
+                        <th style="width: 50px;">Initial Value</th>
+                        <th style="width: 180px;">Description</th>
+                    </tr>
+                </thead>
+                <tbody id="inputs-config">
+                    
+                </tbody>
+            </table>
+        </div>
+        <div class="modal-footer">
+            <button id="inputs-config-save" class="btn btn-primary">Save</button>
+            <button id="inputs-config-cancel" class="btn btn-secondary">Cancel</button>
+        </div>
+    </div>
+    </dialog>
+
+    <dialog id="sim-config-modal" class="modal">
+        <div class="modal-header">
+            <h2>Simulation Configuration</h2>
+            <span class="modal-close">&times;</span>
+        </div>
+        <form id="simConfigForm">
+            <div>
+                <label>Simulation Mode: </label>
+                <select name="simMode" id="simMode">
+                    <option value="Automation" selected>Automation</option>
+                    <option value="Classic">Classic</option>
+                    <option value="VisObj">VisObj</option>
+                </select>
+            </div>
+            <div>
+                <input type="checkbox" name="arcDebug" id="arcDebug">
+                <label for="arcDebug">Debug arcs</label>
+            </div>
+            <div>
+                <input type="checkbox" name="guardDebug" id="guardDebug">
+                <label for="guardDebug">Debug guards</label>
+            </div>
+            <div>
+                <label>Priority Mode: </label>
+                <select name="priorityMode" id="priorityMode">
+                    <option value="fixed" selected>Fixed</option>
+                    <option value="random">Random</option>
+                </select>
+            </div>
+        </form>
+        <!-- <p><b>Mode 1:</b>Fire only 1 transition by scan cicle <br>
+            <b>Mode 2:</b>Fire multiple transitions by scan cicle <br>
+            <b>Mode 3:</b>Fire multiple transitions by scan cicle, but only the transitions
+            that started the scan cicle enabled
+        </p> -->
+
+        <!-- <h3>Pre Script</h3>
+        <p>This piece of code runs at each beagning of a scan cicle</p>
+        <textarea name="pre-script" id="pre-script" cols="120" rows="10"
+            placeholder="Write your script here"></textarea> -->
+        <div class="modal-footer">
+            <button id="sim-config-save" class="btn btn-primary">Save</button>
+            <button id="sim-config-cancel" class="btn btn-secondary">Cancel</button>
+        </div>
+    </dialog>
+
+    <dialog id="error-modal" class="modal">
+        <div class="modal-header">
+            <h2>Error</h2>
+            <span class="modal-close close-error-modal">&times;</span>
+        </div>
+        <div class="modal-body">
+            <h4 id="error-message"></h4>
+            <a id="error-select-element">select the element</a>
+        </div>
+        <div class="modal-footer">
+            <button id="close-error-modal" class="btn btn-secondary">Close</button>
+        </div>
+    </dialog>
+
+    <div class="flex-row">
+        <div id="side-bar">
+            <div id="property-window">
+                <div id="pw-place" style="display: none;">
+                    <label>Name</label>
+                    <input id="pw-place-name" type="text">
+                    <label>Type</label>
+                    <select id="pw-place-placeType">
+                        <option value="BOOL">BOOL</option>
+                        <option value="INT">INT</option>
+                    </select>
+                    <label>Initial Mark</label>
+                    <input id="pw-place-initialMark" type="text">
+                </div>
+                <div id="pw-trans" style="display: none;">
+                    <label>Name</label>
+                    <input id="pw-trans-name" type="text">
+                    <label>Delay</label>
+                    <input id="pw-trans-delay" type="text">
+                    <label>Guard</label>
+                    <input id="pw-trans-guard" type="text">
+                    <label>Priority</label>
+                    <input id="pw-trans-priority" type="text">
+                </div>
+                <div id="pw-arc" style="display: none;">
+                    <label>Type</label>
+                    <select id="pw-arc-arcType">
+                        <option value="Input">Input</option>
+                        <option value="Output">Output</option>
+                        <option value="Test">Test arc</option>
+                        <option value="Inhibitor">Inhibitor</option>
+                    </select>
+                    <label>Weight</label>
+                    <input id="pw-arc-weight" type="text" value="1">
+                </div>
+            </div>
+
+            <div id="inputs-window" style="display: none;">
+                <table>
+                    <thead>
+                        <th style="width: 8rem;">Input</th>
+                        <th style="width: 3rem;">Value</th>
+                    </thead>
+                    <tbody>
+                        
+                    </tbody>
+                    
+                </table>
+            </div>
+        </div>
+
+        <svg xmlns="http://www.w3.org/2000/svg" style="z-index: -1;">
+            <defs>
+                <pattern id="grid-pattern" width="10" height="10" patternUnits="userSpaceOnUse">
+                    <rect x="0" y="0" width="10" height="10" stroke="var(--color-grid)" fill="var(--color-bg)" stroke-width="0.2"/>
+                </pattern>
+            </defs>
+        </svg>
+
+        <div class="editor">
+            <div id="svg-div" style="display: none;"></div>
+
+            <div id="welcome-window">
+                <h1>Automation Petri Net</h1>
+                <h5>A Petri Net editor, simulator and code generator for automation</h5>
+
+                <h4>Start</h4>
+                <a onclick="document.getElementById('nav-btn-new-file').click()">
+                    New File
+                </a>
+                <a onclick="document.getElementById('nav-btn-load-file').click()">
+                    Open File
+                </a>
+
+                <div id="fast-tutorial">
+                    <h4>Fast Tutorial</h4>
+                    <div>
+                        <img src="static/icons/mouse/mouse-left-btn.svg"/> 
+                        Select and drag element
+                    </div>
+                    <div>
+                        <img src="static/icons/mouse/mouse-right-btn.svg"/> 
+                        Pan
+                    </div>
+                    <div>
+                        <img src="static/icons/mouse/mouse-weel.svg"/> 
+                        Zoom
+                    </div>
+                    <div>
+                        <kbd>Ctrl</kbd> + <kbd>z</kbd> 
+                        <span>Undo</span>
+                    </div>
+                    <div>
+                        <kbd>Ctrl</kbd> + <kbd>y</kbd> 
+                        <span>Redo</span>
+                    </div>
+                    <div>
+                        <kbd>Delete</kbd> 
+                        <span>Delete the selected element</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        
+
+        <dialog id="sim-set-mark-modal" class="modal">
+            <div class="modal-header">
+                <h2>Set the Mark</h2>
+            </div>
+            <input type="number" min="0" id="sim-set-mark-input" style="font-size: 12pt;" onfocus="this.select()">
+            <div class="modal-footer">
+                <button id="sim-set-mark-save" class="btn btn-primary">Save</button>
+                <button id="sim-set-mark-cancel" class="btn btn-secondary">Cancel</button>
+            </div>
+        </dialog>
+
+    </div>
+
+    <script type="module" src="static/js/main.js"></script>
+</body>
+
+</html>
