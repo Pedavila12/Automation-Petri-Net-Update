@@ -11,6 +11,8 @@ import Vector from "./utils/Vector.js";
 import { delay } from "./utils/utils.js";
 import { PetriNetData } from "./PNData.js";
 import { SimulationError } from "./LogicalNet.js";
+// Sou LEdS vvv
+
 
 const FILE_PICKER_OPTIONS = {
     types: [{
