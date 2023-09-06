@@ -12,6 +12,8 @@ import { delay } from "./utils/utils.js";
 import { PetriNetData } from "./PNData.js";
 import { SimulationError } from "./LogicalNet.js";
 
+//teste para criar a branch
+
 const FILE_PICKER_OPTIONS = {
     types: [{
         description: 'Automation Petri Net',
