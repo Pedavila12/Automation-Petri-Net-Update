@@ -75,7 +75,19 @@
         #gencode-out {
             width: 100%;
             height: 100%;
-        }        
+        }
+
+        #gentree-modal .modal-content .modal-body {
+            height: 60vh;
+            /* padding-top: 10px; */
+            padding-bottom: 10px;
+            display: block;
+        }
+
+        #gentree-out {
+            width: 100%;
+            height: 100%;
+        }         
 
         #alpha-version {
             color: rgb(179, 179, 15);
@@ -128,6 +140,7 @@
         </div>
         <button id="nav-btn-inputs-config">Inputs</button>
         <button id="nav-btn-gencode">Generate Code</button>
+        <button id="nav-btn-gentree">Generate Tree</button>
 
         <span id="alpha-version" >Alpha Version</span>
     </div>
@@ -207,6 +220,18 @@
         <textarea id="gencode-out" cols="50" rows="10"></textarea>
         <div class="modal-footer">
             <button id="gencode-close" class="btn btn-secondary">Close</button>
+        </div>
+    </dialog>
+
+    <!--Geração de arvore-->
+    <dialog id="gentree-modal" class="modal">
+        <div class="modal-header">
+            <h2>Generated Tree</h2>
+            <span id="gentree-modal-close" class="modal-close">&times;</span>
+        </div>
+        <textarea id="gentree-out" cols="50" rows="10"></textarea>
+        <div class="modal-footer">
+            <button id="gentree-close" class="btn btn-secondary">Close</button>
         </div>
     </dialog>
 
