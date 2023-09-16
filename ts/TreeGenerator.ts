@@ -1,5 +1,11 @@
-  
+
  
+function generateTree() {
+  return 'Generating tree...'
+
+}
+
+export { generateTree }
 
 
   // Defina uma classe para representar um estado da rede de Petri

@@ -9,6 +9,7 @@ import { Simulator } from "./Components/Simulator.js";
 import ToolBar from "./Components/ToolBar.js";
 import { delay } from "./utils/utils.js";
 import { SimulationError } from "./LogicalNet.js";
+import { generateTree } from "./TreeGenerator.js";
 const FILE_PICKER_OPTIONS = {
     types: [{
             description: 'Automation Petri Net',
@@ -59,6 +60,7 @@ export class Application {
         this.bindSimulationButtons();
         this.bindGenCodeButtons();
         this.addEditorEventListeners();
+        this.bindGenTreeButtons();
         this.setTheme(localStorage.getItem("theme") ?? "light");
     }
     getEditor() {
@@ -207,6 +209,30 @@ export class Application {
             },
             "gencode-close": () => {
                 genCodeModal.close();
+            },
+        };
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            btn.onclick = handler;
+        }
+    }
+    bindGenTreeButtons() {
+        const genTreeModal = document
+            .getElementById('gentree-modal');
+        const handlers = {
+            "nav-btn-gentree": () => {
+                if (!this.editor)
+                    return;
+                genTreeModal.showModal();
+                const ele = document
+                    .getElementById('gentree-out');
+                ele.value = generateTree();
+            },
+            "gentree-modal-close": () => {
+                genTreeModal.close();
+            },
+            "gentree-close": () => {
+                genTreeModal.close();
             },
         };
         for (const [btnId, handler] of Object.entries(handlers)) {

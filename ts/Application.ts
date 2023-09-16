@@ -11,6 +11,7 @@ import Vector from "./utils/Vector.js";
 import { delay } from "./utils/utils.js";
 import { PetriNetData } from "./PNData.js";
 import { SimulationError } from "./LogicalNet.js";
+import { generateTree } from "./TreeGenerator.js";
 
 const FILE_PICKER_OPTIONS = {
     types: [{
@@ -71,6 +72,7 @@ export class Application {
         this.bindSimulationButtons()
         this.bindGenCodeButtons()
         this.addEditorEventListeners()
+        this.bindGenTreeButtons()
 
         this.setTheme(localStorage.getItem("theme") ?? "light")
     }
@@ -254,6 +256,37 @@ export class Application {
             },
             "gencode-close": () => {
                 genCodeModal.close()
+            },
+        }
+
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = <HTMLElement>document.getElementById(
+                btnId
+            )
+            btn.onclick = handler
+        }
+    }
+
+    private bindGenTreeButtons() {
+        const genTreeModal = <HTMLDialogElement>document
+            .getElementById('gentree-modal')
+
+        const handlers = {
+            "nav-btn-gentree": () => {
+                if (!this.editor)
+                    return
+
+                genTreeModal.showModal()
+                const ele = <HTMLTextAreaElement>document
+                    .getElementById('gentree-out')
+        
+                 ele.value = generateTree()
+            },
+            "gentree-modal-close": () => {
+                genTreeModal.close()
+            },
+            "gentree-close": () => {
+                genTreeModal.close()
             },
         }
 

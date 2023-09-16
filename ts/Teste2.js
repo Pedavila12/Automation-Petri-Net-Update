@@ -1,3 +1,8 @@
+
+function generateTree() {
+  
+}
+
 class PetriNet {
     constructor(initialMarking) {
       this.places = initialMarking;
