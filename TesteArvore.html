@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Árvore de Alcançabilidade</title>
+</head>
+<body>
+  <svg id="drawing" width="1200" height="800"></svg>
+  <script>
+    // Classe PetriNet (traduzida para JavaScript)
+    class PetriNet {
+      constructor(places, transitions, initialMarking) {
+        this.places = places;
+        this.transitions = transitions;
+        this.marking = { ...initialMarking };
+      }
+
+      fireTransition(transition) {
+        // Verifique se a transição pode ser disparada
+        if (this.canFireTransition(transition)) {
+          // Atualize a marcação após disparar a transição
+          for (const inputPlace in transition.input) {
+            this.marking[inputPlace] -= transition.input[inputPlace]; // Remova tokens do lugar de entrada
+          }
+          for (const outputPlace in transition.output) {
+            this.marking[outputPlace] += transition.output[outputPlace]; // Adicione tokens ao lugar de saída
+          }
+          return this.cloneMarking(this.marking); // Retorne o vetor de marcação atual
+        } else {
+          return null;
+        }
+      }
+
+      canFireTransition(transition) {
+        // Verifique se a transição pode ser disparada
+        return Object.keys(transition.input).every(inputPlace => this.marking[inputPlace] >= transition.input[inputPlace]);
+      }
+
+      cloneMarking(marking) {
+        return { ...marking };
+      }
+    }
+
+    // Função para gerar uma árvore de alcançabilidade em SVG
+    function generateReachabilityTreeSVG(petriNet, x, y) {
+      const canvas = document.getElementById('drawing');
+      const treeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+
+      const markingHistory = []; // Histórico de vetores de marcação
+      let stopGeneration = false; // Variável para interromper a geração
+
+      function drawTreeNode(node, x, y) {
+        const placeNames = Object.keys(petriNet.marking);
+        let childX = x - 40;
+        let childY = y + 100;
+        
+        // Desenha o retângulo em torno do lugar
+        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        rect.setAttribute('x', (x + 10).toString());
+        rect.setAttribute('y', (y).toString());
+        rect.setAttribute('width', '130');
+        rect.setAttribute('height', '20');
+        rect.setAttribute('stroke', 'black');
+        rect.setAttribute('fill', 'none');
+        treeGroup.appendChild(rect);
+        // Desenha os lugares e suas marcações
+        for (const placeName of placeNames) { 
+            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+            text.setAttribute('x', (x + 10).toString());
+            text.setAttribute('y', (y + 15).toString());
+            text.setAttribute('fill', 'black');
+            //text.setAttribute('text-anchor', 'middle');
+            text.textContent = `${node.marking[placeName]}`;
+            treeGroup.appendChild(text);
+            x += 40;
+        }
+
+        markingHistory.push(node.marking); // Adicione o vetor de marcação ao histórico
+
+        for (const transition of petriNet.transitions) {
+          if (stopGeneration) {
+            break; // Pare a geração se a flag de interrupção estiver definida
+          }
+
+          const newMarking = petriNet.fireTransition(transition);
+          if (newMarking !== null) {
+            // Verifique se o vetor de marcação já existe no histórico
+            if (!hasSameMarkingInHistory(newMarking)) {
+              // Desenha a transição como uma seta
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('x1', (x-80).toString());
+              line.setAttribute('y1', (y+20).toString());
+              line.setAttribute('x2', (childX+80).toString());
+              line.setAttribute('y2', (childY).toString());
+              line.setAttribute('stroke', 'blue');
+              line.setAttribute('stroke-width', '2');
+              treeGroup.appendChild(line);
+
+              drawTreeNode({ marking: newMarking, children: [] }, childX, childY);
+
+              childX += 80; // Aumenta o espaço entre os lugares subsequentes
+            } else {
+              // Se o vetor de marcação já existe no histórico, marque a interrupção
+              stopGeneration = true;
+              // Desenha o vetor repetido como os nós anteriores
+              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+              line.setAttribute('x1', (x-80).toString());
+              line.setAttribute('y1', (y+20).toString());
+              line.setAttribute('x2', (childX+80).toString());
+              line.setAttribute('y2', (childY).toString());
+              line.setAttribute('stroke', 'blue');
+              line.setAttribute('stroke-width', '2');
+              treeGroup.appendChild(line);
+              drawTreeNode({ marking: newMarking, children: [] }, childX, childY);
+            }
+          }
+        }
+      }
+
+      function hasSameMarkingInHistory(newMarking) {
+        return markingHistory.some(marking => JSON.stringify(marking) === JSON.stringify(newMarking));
+      }
+
+      canvas.appendChild(treeGroup);
+      drawTreeNode({ marking: petriNet.cloneMarking(petriNet.marking), children: [] }, x, y);
+    }
+
+    // Exemplo de uso (uma rede de Petri mais complexa):
+    const places = ["P1", "P2", "P3", "P4"];
+    const transitions = [
+      { input: { P1: 1}, output: { P2: 1, P3: 1 } },
+      { input: { P2: 1 }, output: { P4: 1 } },
+      { input: { P3: 1 }, output: { P4: 1 } },
+      { input: { P4: 2 }, output: { P1: 1 } },
+    ];
+    const initialMarking = { P1: 1, P2: 0, P3: 0, P4: 0};
+    const petriNet = new PetriNet(places, transitions, initialMarking);
+
+    generateReachabilityTreeSVG(petriNet, 600, 30);
+  </script>
+</body>
+</html>
+
+
