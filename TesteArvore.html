@@ -1,143 +1,195 @@
 <!DOCTYPE html>
 <html>
+
 <head>
-  <title>Árvore de Alcançabilidade</title>
-</head>
-<body>
-  <svg id="drawing" width="1200" height="800"></svg>
-  <script>
-    // Classe PetriNet (traduzida para JavaScript)
-    class PetriNet {
-      constructor(places, transitions, initialMarking) {
-        this.places = places;
-        this.transitions = transitions;
-        this.marking = { ...initialMarking };
-      }
-
-      fireTransition(transition) {
-        // Verifique se a transição pode ser disparada
-        if (this.canFireTransition(transition)) {
-          // Atualize a marcação após disparar a transição
-          for (const inputPlace in transition.input) {
-            this.marking[inputPlace] -= transition.input[inputPlace]; // Remova tokens do lugar de entrada
-          }
-          for (const outputPlace in transition.output) {
-            this.marking[outputPlace] += transition.output[outputPlace]; // Adicione tokens ao lugar de saída
-          }
-          return this.cloneMarking(this.marking); // Retorne o vetor de marcação atual
-        } else {
-          return null;
-        }
-      }
-
-      canFireTransition(transition) {
-        // Verifique se a transição pode ser disparada
-        return Object.keys(transition.input).every(inputPlace => this.marking[inputPlace] >= transition.input[inputPlace]);
-      }
-
-      cloneMarking(marking) {
-        return { ...marking };
-      }
-    }
-
-    // Função para gerar uma árvore de alcançabilidade em SVG
-    function generateReachabilityTreeSVG(petriNet, x, y) {
-      const canvas = document.getElementById('drawing');
-      const treeGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-
-      const markingHistory = []; // Histórico de vetores de marcação
-      let stopGeneration = false; // Variável para interromper a geração
-
-      function drawTreeNode(node, x, y) {
-        const placeNames = Object.keys(petriNet.marking);
-        let childX = x - 40;
-        let childY = y + 100;
-        
-        // Desenha o retângulo em torno do lugar
-        const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
-        rect.setAttribute('x', (x + 10).toString());
-        rect.setAttribute('y', (y).toString());
-        rect.setAttribute('width', '130');
-        rect.setAttribute('height', '20');
-        rect.setAttribute('stroke', 'black');
-        rect.setAttribute('fill', 'none');
-        treeGroup.appendChild(rect);
-        // Desenha os lugares e suas marcações
-        for (const placeName of placeNames) { 
-            const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
-            text.setAttribute('x', (x + 10).toString());
-            text.setAttribute('y', (y + 15).toString());
-            text.setAttribute('fill', 'black');
-            //text.setAttribute('text-anchor', 'middle');
-            text.textContent = `${node.marking[placeName]}`;
-            treeGroup.appendChild(text);
-            x += 40;
-        }
-
-        markingHistory.push(node.marking); // Adicione o vetor de marcação ao histórico
-
-        for (const transition of petriNet.transitions) {
-          if (stopGeneration) {
-            break; // Pare a geração se a flag de interrupção estiver definida
-          }
-
-          const newMarking = petriNet.fireTransition(transition);
-          if (newMarking !== null) {
-            // Verifique se o vetor de marcação já existe no histórico
-            if (!hasSameMarkingInHistory(newMarking)) {
-              // Desenha a transição como uma seta
-              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-              line.setAttribute('x1', (x-80).toString());
-              line.setAttribute('y1', (y+20).toString());
-              line.setAttribute('x2', (childX+80).toString());
-              line.setAttribute('y2', (childY).toString());
-              line.setAttribute('stroke', 'blue');
-              line.setAttribute('stroke-width', '2');
-              treeGroup.appendChild(line);
-
-              drawTreeNode({ marking: newMarking, children: [] }, childX, childY);
-
-              childX += 80; // Aumenta o espaço entre os lugares subsequentes
-            } else {
-              // Se o vetor de marcação já existe no histórico, marque a interrupção
-              stopGeneration = true;
-              // Desenha o vetor repetido como os nós anteriores
-              const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-              line.setAttribute('x1', (x-80).toString());
-              line.setAttribute('y1', (y+20).toString());
-              line.setAttribute('x2', (childX+80).toString());
-              line.setAttribute('y2', (childY).toString());
-              line.setAttribute('stroke', 'blue');
-              line.setAttribute('stroke-width', '2');
-              treeGroup.appendChild(line);
-              drawTreeNode({ marking: newMarking, children: [] }, childX, childY);
-            }
-          }
-        }
-      }
-
-      function hasSameMarkingInHistory(newMarking) {
-        return markingHistory.some(marking => JSON.stringify(marking) === JSON.stringify(newMarking));
-      }
-
-      canvas.appendChild(treeGroup);
-      drawTreeNode({ marking: petriNet.cloneMarking(petriNet.marking), children: [] }, x, y);
-    }
-
-    // Exemplo de uso (uma rede de Petri mais complexa):
-    const places = ["P1", "P2", "P3", "P4"];
-    const transitions = [
-      { input: { P1: 1}, output: { P2: 1, P3: 1 } },
-      { input: { P2: 1 }, output: { P4: 1 } },
-      { input: { P3: 1 }, output: { P4: 1 } },
-      { input: { P4: 2 }, output: { P1: 1 } },
-    ];
-    const initialMarking = { P1: 1, P2: 0, P3: 0, P4: 0};
-    const petriNet = new PetriNet(places, transitions, initialMarking);
-
-    generateReachabilityTreeSVG(petriNet, 600, 30);
+  <meta charset="UTF-8" />
+  <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Automation Petri Net</title>
+  <link rel="icon" type="image/x-icon" href="static/icons/favicon.svg" />
+  <link rel="stylesheet" href="static/css/main.css" />
+  <link rel="stylesheet" href="static/css/theme.css" />
+  <link rel="stylesheet" href="static/css/navbar.css" />
+  <link rel="stylesheet" href="static/css/toolbar.css" />
+  <link rel="stylesheet" href="static/css/sidebar.css" />
+  <link rel="stylesheet" href="static/css/modal.css" />
+  <link rel="stylesheet" href="static/css/inputs-config-modal.css" />
+  <link rel="stylesheet" href="static/css/sim-config.css" />
+  <link rel="stylesheet" href="static/css/welcome-window.css" />
+  <script src="https://d3js.org/d3.v5.min.js"></script>
+  <!--<script type="module" src = "static/js/TreeGenerator.js">
+    import { generateTree } from 'static/js/TreeGenerator.js';
   </script>
+  <script type="module" src = "static/js/Application.js">
+    import { Application } from 'static/js/Application.js';
+    console.log(customFormatNet);
+    const places = customFormatNet.places;
+    const transitions = customFormatNet.transitions;
+  </script>-->
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      overflow: hidden;
+      user-select: none;
+      width: 100vw;
+      height: 100vh;
+      margin: 0;
+      background-color: #858484;
+      /* Substitua #333 pelo código de cor desejado para cinza escuro */
+    }
+
+    .flex-row {
+      display: flex;
+      flex-direction: row;
+      height: 100%;
+    }
+
+    .editor {
+      position: absolute;
+      left: 13rem;
+      width: 100%;
+      height: 100%;
+    }
+
+    #svg-div {
+      position: relative;
+      width: 100%;
+      height: 100%;
+      border-bottom: 2px solid black;
+    }
+
+    text {
+      font-size: 4.5pt;
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    /*.graph-container {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      zoom: 0.5;
+    }*/
+    .PlotTree {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      zoom: 0.5;
+    }
+
+    .link {
+      fill: none;
+      stroke: #000;
+      /* Cor da linha - ajuste conforme necessário */
+      stroke-width: 1.5px;
+    }
+
+    .node {
+      fill: #fff;
+      /* Cor do círculo - ajuste conforme necessário */
+      stroke: rgb(0, 0, 0);
+      /* Cor da borda do círculo - ajuste conforme necessário */
+      stroke-width: 1.5px;
+    }
+
+    .label {
+      font-size: 12px;
+      /* Ajuste conforme necessário */
+      fill: #000;
+      /* Cor do texto - ajuste conforme necessário */
+    }
+
+    #pw-div label {
+      display: block;
+      padding-top: 10px;
+    }
+
+    #simulating-text,
+    #simulation-time {
+      color: var(--color-text-primary);
+      align-self: center;
+      padding-left: 1rem;
+    }
+
+    #gencode-modal .modal-content .modal-body {
+      height: 60vh;
+      /* padding-top: 10px; */
+      padding-bottom: 10px;
+      display: block;
+    }
+
+    #alpha-version {
+      color: rgb(179, 179, 15);
+      float: right;
+      /*margin: 6px 6px 0 0;*/
+      padding-inline: 2px;
+      font-size: 11pt;
+      border: 1px solid rgb(179, 179, 15);
+      border-radius: 3px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="navbar">
+    <div class="dropdown">
+      <button class="dropbtn">File
+        <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content">
+        <a id="nav-btn-new-file">New</a>
+        <a id="nav-btn-load-file" style="display: none;">Load</a>
+        <a id="nav-btn-save-file" style="display: none;">Save</a>
+        <!-- <a idnav-btn-="save-as">Save as</a> -->
+        <a onclick="document.getElementById('nav-btn-import').click()">Load</a>
+        <input id="nav-btn-import" type="file" style="display: none;">
+        <a id="nav-btn-export" href="" download="my_net.txt">Save</a>
+        <a id="nav-btn-close-file">Close</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <button class="dropbtn">View
+        <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content">
+        <a id="nav-btn-toggle-grid">Toggle Grid</a>
+        <a id="nav-btn-toggle-theme">Toggle Theme</a>
+      </div>
+    </div>
+    <div class="dropdown">
+      <button class="dropbtn">Simulation
+        <i class="fa fa-caret-down"></i>
+      </button>
+      <div class="dropdown-content">
+        <a>Run</a>
+        <a>Step</a>
+        <a>Restart</a>
+        <a id="nav-btn-sim-config">Configuration</a>
+      </div>
+    </div>
+    <button id="nav-btn-inputs-config">Inputs</button>
+    <button id="nav-btn-gencode">Generate Code</button>
+    <button onclick="generateTree()">Generate Tree</button>
+
+    <span id="alpha-version">Alpha Version</span>
+  </div>
+  <div class="PlotTree">
+    <div id="graph-container"></div>
+  </div>
+
+  <!--<svg id="graph" width="2000" height="2000"></svg>-->
+  <script type="module" src="static/js/Teste2.js"></script>
+  <script type="module">
+    import { teste } from "/static/js/Teste2.js"
+    document.addEventListener('DOMContentLoaded', function () {
+      // Chamando uma função de script1.js
+      teste();
+    });
+  </script>
+
+   
 </body>
+
 </html>
-
-

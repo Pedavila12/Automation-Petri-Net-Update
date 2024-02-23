@@ -1,6 +1,6 @@
 
  
-function generateTree() {
+/*function generateTree() {
   return 'Generating tree...'
 
 }
@@ -112,4 +112,4 @@ export { generateTree }
   
     return true;
   }  
-  
+  */

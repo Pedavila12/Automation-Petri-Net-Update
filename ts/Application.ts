@@ -11,7 +11,7 @@ import Vector from "./utils/Vector.js";
 import { delay } from "./utils/utils.js";
 import { PetriNetData } from "./PNData.js";
 import { SimulationError } from "./LogicalNet.js";
-import { generateTree } from "./TreeGenerator.js";
+//import { generateTree } from "./TreeGenerator.js";
 
 const FILE_PICKER_OPTIONS = {
     types: [{
@@ -268,7 +268,7 @@ export class Application {
     }
 
     private bindGenTreeButtons() {
-        const genTreeModal = <HTMLDialogElement>document
+        /*const genTreeModal = <HTMLDialogElement>document
             .getElementById('gentree-modal')
 
         const handlers = {
@@ -295,7 +295,7 @@ export class Application {
                 btnId
             )
             btn.onclick = handler
-        }
+        }*/
     }
 
     private bindSimulationButtons() {

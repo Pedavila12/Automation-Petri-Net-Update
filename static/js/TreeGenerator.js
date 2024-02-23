@@ -1,71 +1,130 @@
-function generateTree() {
-    return 'Generating tree...';
-}
-export { generateTree };
-// Defina uma classe para representar um estado da rede de Petri
-class Estado {
-    marcacao;
-    transicao_habilitada;
-    constructor(marcacao, transicao_habilitada) {
-        this.marcacao = marcacao;
-        this.transicao_habilitada = transicao_habilitada;
+class Place {
+    constructor(name, marking = 0, isInhibitor = false,id) {
+      this.name = name;
+      this.marking = marking;
+      this.isInhibitor = isInhibitor;
+      this.id = id;
+    }
+  }
+class Transition {
+    constructor(inputPlaces, outputPlaces, isTest = false, id) {
+        this.inputPlaces = inputPlaces;
+        this.outputPlaces = outputPlaces;
+        this.isTest = isTest;
+        this.id = id;
+    }
+    toString() {
+        return `T${JSON.stringify(this.id)}`;
     }
 }
-// Função para criar uma árvore de alcance a partir de um estado inicial
-function criarArvoreDeAlcance(redeDePetri, estadoInicial) {
-    // Inicialize a árvore com o estado inicial
-    const arvore = [estadoInicial];
-    // Lista para manter controle de estados visitados
-    const visitados = [estadoInicial];
-    // Enquanto houver estados na árvore
-    while (arvore.length > 0) {
-        // Pegue o primeiro estado da árvore
-        const estadoAtual = arvore.shift();
-        // Para cada transição habilitada no estado atual
-        for (const transicao of estadoAtual.transicao_habilitada) {
-            // Gere um novo estado aplicando a transição
-            const novoEstado = aplicarTransicao(estadoAtual, transicao, redeDePetri);
-            // Se o novo estado não foi visitado, adicione-o à árvore
-            if (!visitados.some((estado) => areEstadosIguais(estado, novoEstado))) {
-                arvore.push(novoEstado);
-                visitados.push(novoEstado);
+function generateTree(netData) {
+    const places = [];
+    const transitions = [];
+
+    //console.log(JSON.stringify(netData))
+    // Criar lugares
+    places.push(
+        ...netData.places.map(placeData => {
+            const place = new Place(placeData.name, parseInt(placeData.initialMark), placeData.placeType === 'BOOL',placeData.id);
+            //console.log(place)
+            return place;
+        })
+    );
+
+    // Criar transições
+    /*transitions.push(
+        ...netData.transitions.map(transData => {
+            const inputArcs = [];
+            const outputArcs = [];
+
+            // Verificar se há arcos de entrada
+            if (transData.input) {
+                inputArcs.push(...Object.entries(transData.input).map(([placeName, weight]) => ({ [placeName]: parseInt(weight) })));
             }
-        }
-    }
-    return visitados;
+
+            // Verificar se há arcos de saída
+            if (transData.output) {
+                outputArcs.push(...Object.entries(transData.output).map(([placeName, weight]) => ({ [placeName]: parseInt(weight) })));
+            }
+
+            const transition = new Transition(inputArcs, outputArcs, transData.inhibitor, transData.priority, transData.name);
+            console.log(transition)
+            return transition;
+        })
+    );
+
+    // Criar arcos
+    arcs.push(
+        ...netData.arcs.map(arcData => {
+            const arc = new Arc(
+                arcData.placeId,
+                arcData.transId,
+                arcData.arcType,
+                parseInt(arcData.weight),
+                arcData.corners.map(corner => new Vector(corner.x, corner.y))
+            );
+            return arc;
+        })
+    );*/
+    // Mapeia as transições
+    netData.transitions.forEach(transData => {
+        const inputArcs = {};
+        const outputArcs = {};
+
+        // Mapeia os arcs de input
+        netData.arcs
+            .filter(arc => arc.transId === transData.id && arc.arcType === 'Input')
+            .forEach(arc => {
+                const place = places.find(place => place.id === arc.placeId);
+                //console.log(place.id);
+                //console.log(arc.placeId)
+                // Verifica se o lugar foi encontrado
+                if (place) {
+                    inputArcs[place.name] = parseInt(arc.weight);
+                } else {
+                    console.error(`Lugar não encontrado para o ID: ${arc.placeId}`);
+                }
+            });
+
+        // Mapeia os arcs de output
+        netData.arcs
+            .filter(arc => arc.transId === transData.id && arc.arcType === 'Output')
+            .forEach(arc => {
+                const place = places.find(place => place.id === arc.placeId);
+                if (place) {
+                    outputArcs[place.name] = parseInt(arc.weight);
+                } else {
+                    console.error(`Lugar não encontrado para o ID: ${arc.placeId}`);
+                }
+            });
+
+        // Mapeia os arcs de teste
+        const hasTestArc = netData.arcs.some(arc => arc.transId === transData.id && arc.arcType === 'Test');
+
+        const transitionNumber = parseInt(transData.name.replace(/\D/g, ''), 10);
+        // Cria a transição simplificada
+        const transition = new Transition(
+            inputArcs,
+            outputArcs,
+            hasTestArc,
+            transitionNumber
+        );
+
+        transitions.push(transition);
+    });
+
+    //console.log(places)
+    //console.log(transitions)
+    //window.open('TesteArvore.html', '_blank');  
+    
+    return { places, transitions };
 }
-// Função para aplicar uma transição a um estado e obter um novo estado
-function aplicarTransicao(estadoAtual, transicao, redeDePetri) {
-    const novaMarcacao = [...estadoAtual.marcacao];
-    // Atualize a marcação de acordo com a transição
-    for (const [lugar, peso] of Object.entries(redeDePetri.transicoes[transicao].pre_condicoes)) {
-        novaMarcacao[Number(lugar)] -= Number(peso);
-    }
-    for (const [lugar, peso] of Object.entries(redeDePetri.transicoes[transicao].pos_condicoes)) {
-        novaMarcacao[Number(lugar)] += Number(peso);
-    }
-    // Verifique quais transições estão habilitadas no novo estado
-    const transicoesHabilitadas = redeDePetri.transicoes.filter((transicao) => transicaoEhabilitada(transicao, novaMarcacao));
-    return new Estado(novaMarcacao, transicoesHabilitadas.map((t) => t.id));
-}
-// Função para verificar se duas marcações são iguais
-function areMarcacoesIguais(marcacao1, marcacao2) {
-    if (marcacao1.length !== marcacao2.length) {
-        return false;
-    }
-    for (let i = 0; i < marcacao1.length; i++) {
-        if (marcacao1[i] !== marcacao2[i]) {
-            return false;
-        }
-    }
-    return true;
-}
-// Função para verificar se uma transição está habilitada em uma determinada marcação
-function transicaoEhabilitada(transicao, marcacao) {
-    for (const [lugar, peso] of Object.entries(transicao.pre_condicoes)) {
-        if (marcacao[Number(lugar)] < Number(peso)) {
-            return false;
-        }
-    }
-    return true;
-}
+//Application.editor.netData
+//window.location.href = "TesteArvore.html"
+//const netData = this.editor.net;
+//const customFormatNet = generateTree(netData);
+//console.log(generateTree(netData));
+
+//{"name":"Untiteled_Net","places":[{"id":"856f0286-bc6a-47d4-9cec-5424ab3cd49d","elementType":"place","name":"p1","placeType":"INT","initialMark":"0","position":{"x":80.58761804826862,"y":45.3305351521511},"textsPosition":{"name":{"x":6.5,"y":-8},"placeType":{"x":7,"y":8.5}}},{"id":"6f18b10d-e503-4fda-9bc6-438f9199510a","elementType":"place","name":"p2","placeType":"INT","initialMark":"0","position":{"x":81.84679958027282,"y":123.08499475341029},"textsPosition":{"name":{"x":6.5,"y":-8},"placeType":{"x":7,"y":8.5}}}],"transitions":[{"id":"cf2be11c-7e78-456b-bcbb-300aded9e302","elementType":"trans","name":"t1","delay":"","guard":"","priority":"0","position":{"x":123.08499475341027,"y":87.51311647429172},"textsPosition":{"name":{"x":6,"y":-5.5},"delay":{"x":6,"y":5.5},"guard":{"x":-6,"y":-5.5}}}],"arcs":[{"id":"e70f8e79-5c7f-4103-bf0b-1f500ec400c1","elementType":"arc","placeId":"856f0286-bc6a-47d4-9cec-5424ab3cd49d","transId":"cf2be11c-7e78-456b-bcbb-300aded9e302","arcType":"Input","weight":"1","textsPosition":{"weight":{"x":0,"y":0}},"corners":[]},{"id":"fec8131e-6bad-432b-b2a2-14c128497910","elementType":"arc","placeId":"6f18b10d-e503-4fda-9bc6-438f9199510a","transId":"cf2be11c-7e78-456b-bcbb-300aded9e302","arcType":"Output","weight":"1","textsPosition":{"weight":{"x":0,"y":0}},"corners":[]}],"inputs":[],"grid":false,"nextPlaceNumber":3,"nextTransNumber":2,"viewBox":{"x":0,"y":0,"width":1500,"heigth":300},"preScript":"","simConfig":{"simMode":"Automation","arcDebug":false,"guardDebug":false,"priorityMode":"fixed"}}
+export { generateTree };
+

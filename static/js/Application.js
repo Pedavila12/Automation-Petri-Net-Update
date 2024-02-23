@@ -10,13 +10,14 @@ import ToolBar from "./Components/ToolBar.js";
 import { delay } from "./utils/utils.js";
 import { SimulationError } from "./LogicalNet.js";
 import { generateTree } from "./TreeGenerator.js";
+import { teste } from "./Teste2.js";
 const FILE_PICKER_OPTIONS = {
     types: [{
-            description: 'Automation Petri Net',
-            accept: {
-                'text/plain': ['.txt']
-            }
-        }],
+        description: 'Automation Petri Net',
+        accept: {
+            'text/plain': ['.txt']
+        }
+    }],
     excludeAcceptAllOption: true,
     multiple: false
 };
@@ -217,6 +218,12 @@ export class Application {
         }
     }
     bindGenTreeButtons() {
+        /*const handlers = {
+            "nav-btn-gentree": () => {
+                if (!this.editor)
+                    return generateTree();
+            }
+        }*/
         const genTreeModal = document
             .getElementById('gentree-modal');
         const handlers = {
@@ -226,9 +233,17 @@ export class Application {
                 genTreeModal.showModal();
                 const ele = document
                     .getElementById('gentree-out');
-                ele.value = generateTree();
-            },
-            "gentree-modal-close": () => {
+                
+                const netData = this.editor.net.getNetData();
+                const customFormatNet = generateTree(netData);
+                teste(customFormatNet);
+                //sessionStorage.setItem('rede',customFormatNet);
+                //console.log(customFormatNet);
+                //console.log(customFormatNet.places)
+                //return customFormatNet;
+                //ele.value = generateTree(this.editor.net.getNetData());
+                //window.open('TesteArvore.html', '_blank');  
+            }, "gentree-modal-close": () => {
                 genTreeModal.close();
             },
             "gentree-close": () => {
