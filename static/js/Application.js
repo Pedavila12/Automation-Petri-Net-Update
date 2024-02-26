@@ -9,8 +9,19 @@ import { Simulator } from "./Components/Simulator.js";
 import ToolBar from "./Components/ToolBar.js";
 import { delay } from "./utils/utils.js";
 import { SimulationError } from "./LogicalNet.js";
-import { generateTree } from "./TreeGenerator.js";
-import { teste } from "./Teste2.js";
+import { ConvertPetriNet } from "./ReachabilityTree/ConvertPetriNet.js";
+//import { PetriAndProperties } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { PetriClass } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { reachabilityTree } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { interpretReachabilityTree } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { isBinaryAndSafe } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { isConservative } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { isReversible } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { getMatrices } from "./ReachabilityTree/PetriNetAndProperties.js";
+//import { findPlaceInvariants } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { isMarkingReachable } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { renderReachabilityTree } from "./ReachabilityTree//RenderReachabilityTree.js"
+//import { teste } from "./Teste2.js";
 const FILE_PICKER_OPTIONS = {
     types: [{
         description: 'Automation Petri Net',
@@ -217,32 +228,62 @@ export class Application {
             btn.onclick = handler;
         }
     }
+    //Botão para abrir o modal
     bindGenTreeButtons() {
-        /*const handlers = {
-            "nav-btn-gentree": () => {
-                if (!this.editor)
-                    return generateTree();
-            }
-        }*/
         const genTreeModal = document
             .getElementById('gentree-modal');
+        const treeContainer = document.getElementById('tree-container');
         const handlers = {
             "nav-btn-gentree": () => {
                 if (!this.editor)
                     return;
+                //Limpa o conteudo do modal para gerar um container novo
+                treeContainer.innerHTML = '';
                 genTreeModal.showModal();
-                const ele = document
-                    .getElementById('gentree-out');
-                
+                //Chama a rede de petri desenhada em tela
                 const netData = this.editor.net.getNetData();
-                const customFormatNet = generateTree(netData);
-                teste(customFormatNet);
-                //sessionStorage.setItem('rede',customFormatNet);
-                //console.log(customFormatNet);
-                //console.log(customFormatNet.places)
-                //return customFormatNet;
-                //ele.value = generateTree(this.editor.net.getNetData());
-                //window.open('TesteArvore.html', '_blank');  
+                //Converte a rede de petri para o formato utilizano no render
+                const customFormatNet = ConvertPetriNet(netData);
+                //Definir os lugares e transições para chamar as funções de tratamento e renderização da arvore de alcansabilidade
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                const initialState = Object.fromEntries(
+                    places.map((place) => [place.name, place.marking])
+                );
+                const tree = reachabilityTree(petriClass, initialState);
+                const interpretedTree = interpretReachabilityTree(tree);
+                renderReachabilityTree(interpretedTree);
+                //Exemplo de uso da propriedade de segurança ou binária
+                isBinaryAndSafe(petriClass);
+                //Exemplo de uso da propriedade de conservação
+                isConservative(interpretedTree);
+                //Exemplo de uso da propriedade de reversibilidade
+                isReversible(petriClass);
+                //Exemplo de uso da propriedade de limitação
+                petriClass.limitOfPetriNet();
+                //Exemplo de uso da propriedade de alcançabilidade
+                const targetMarking = { 'p1': 0, 'p2': 0, 'p3': 0,'p4': 1, 'p5': 1, 'p6': 1 };
+                const isReachable = isMarkingReachable(interpretedTree, targetMarking);
+                if (isReachable) {
+                    console.log("A Marcação é alçavel.");
+                } else {
+                    console.log("Marcação não alcançável a partir da árvore de alcance.");
+                }
+                //exemplo de utilização da função que retorna os invariantes de lugar
+                //const { C, E, S } = getMatrices(petriClass);
+                //const invariants = findPlaceInvariants(C);
+                //console.log("Invariantes de Lugar:", invariants);
+                /*console.log('Matriz C:');
+                console.log(C);
+                console.log('Matriz E:');
+                console.log(E);
+                console.log('Matriz S:');
+                console.log(S);
+                
+                const isReachable = isMarkingReachable(petriClass, targetMarking);
+                console.log(`A marcação é alcançável: ${isReachable}`);*/
+
             }, "gentree-modal-close": () => {
                 genTreeModal.close();
             },

@@ -5,14 +5,14 @@ import { generateTree } from '/static/js/TreeGenerator.js';
 //const { places, transitions } = generateTree();
 
 class Place {
-  constructor(name, marking = 0, isInhibitor = false) {
-    this.name = name;
-    this.marking = marking;
-    this.isInhibitor = isInhibitor;
-  }
-  toString() {
-    return `${this.name}: ${this.marking}`;
-  }
+    constructor(name, marking = 0, isInhibitor = false) {
+        this.name = name;
+        this.marking = marking;
+        this.isInhibitor = isInhibitor;
+    }
+    toString() {
+        return `${this.name}: ${this.marking}`;
+    }
 }
 
 /*class Transition {
@@ -36,22 +36,70 @@ function teste(testnet) {
                 this.places[place.name] = new Place(place.name, place.marking);
             });
             this.transitions = transitions;
+            this.visitedMarkings = new Set(); // Conjunto de marcações visitadas
+            this.isInfinite = false; // Flag para indicar se a rede é infinita
         }
 
         fireableTransitions() {
-            return this.transitions.filter((transition) => {
-                return Object.keys(transition.inputPlaces).every((place) => {
-                    const placeMarking = this.places[place].marking;
-                    const requiredMarking = transition.inputPlaces[place];
+            try {
+                return this.transitions.filter((transition) => {
+                    return Object.keys(transition.inputPlaces).every((place) => {
+                        const placeMarking = this.places[place].marking;
+                        const requiredMarking = transition.inputPlaces[place];
 
-                    if (transition.isTest) {
-                        return placeMarking >= requiredMarking;
-                    } else {
-                        return placeMarking >= requiredMarking && !this.places[place].isInhibitor;
-                    }
+                        if (transition.isTest) {
+                            return placeMarking >= requiredMarking;
+                        } else {
+                            return placeMarking >= requiredMarking && !this.places[place].isInhibitor;
+                        }
+                    });
                 });
-            });
+            } catch (error) {
+                console.error("Arvore Infinita", error.message);
+                //console.log("Arvore Infinita");
+            }
         }
+
+        /*fireableTransitions() {
+           let maxIterations = 100;
+           const fireableTransitions = [];
+           let iterationCount = 0;
+       
+           for (const transition of this.transitions) {
+               let isFireable = true;
+       
+               for (const place of Object.keys(transition.inputPlaces)) {
+                   const placeMarking = this.places[place].marking;
+                   const requiredMarking = transition.inputPlaces[place];
+       
+                   if (transition.isTest) {
+                       if (!(placeMarking >= requiredMarking)) {
+                           isFireable = false;
+                           break;
+                       }
+                   } else {
+                       if (!(placeMarking >= requiredMarking && !this.places[place].isInhibitor)) {
+                           isFireable = false;
+                           break;
+                       }
+                   }
+               }
+       
+               if (isFireable) {
+                   fireableTransitions.push(transition);
+               }
+       
+               iterationCount++;
+       
+               if (iterationCount >= maxIterations) {
+                   console.error("Número máximo de iterações atingido. Possível loop infinito.");
+                   break;
+ 
+               }
+           }
+       
+           return fireableTransitions;
+       }*/
 
         fireTransition(transition) {
             for (const place in transition.inputPlaces) {
@@ -65,60 +113,6 @@ function teste(testnet) {
             return !this.fireableTransitions().length;
         }
 
-        isSafe() {
-            const allMarkings = [
-                Object.fromEntries(
-                    Object.entries(this.places).map(([p, place]) => [
-                        p,
-                        place.marking,
-                    ])
-                ),
-            ];
-            const visitedMarkings = new Set();
-
-            while (allMarkings.length > 0) {
-                const currentMarking = allMarkings.pop();
-
-                if (visitedMarkings.has(JSON.stringify(currentMarking))) {
-                    continue;
-                }
-
-                visitedMarkings.add(JSON.stringify(currentMarking));
-
-                const fireableTransitions = this.transitions.filter((transition) =>
-                    Object.keys(transition.inputPlaces).every(
-                        (place) =>
-                            currentMarking[place] >= transition.inputPlaces[place]
-                    )
-                );
-
-                if (fireableTransitions.length === 0) {
-                    console.log("A rede de Petri não é segura. Deadlock encontrado.");
-                    return false;
-                }
-
-                for (const transition of fireableTransitions) {
-                    const netCopy = new PetriNet(
-                        Object.values(this.places).map(
-                            (place) => new Place(place.name, currentMarking[place])
-                        ),
-                        this.transitions
-                    );
-                    netCopy.fireTransition(transition);
-                    const newMarking = Object.fromEntries(
-                        Object.entries(netCopy.places).map(([p, place]) => [
-                            p,
-                            place.marking,
-                        ])
-                    );
-
-                    allMarkings.push(newMarking);
-                }
-            }
-
-            console.log("A rede de Petri é segura.");
-            return true;
-        }
 
 
         //Verificar se a rede de petri é conservativa 
@@ -426,6 +420,31 @@ function teste(testnet) {
         }
     }
 
+    function isBinaryAndSafe(net) {
+        // Verifica se a rede de Petri é binária e se todas as marcações são 0 ou 1
+        const isBinaryAndSafe = net.transitions.every((transition) => {
+            const inputPlaces = transition.inputPlaces;
+            const outputPlaces = transition.outputPlaces;
+
+            // Verifica se as marcações são 0 ou 1
+            return (
+                Object.values(inputPlaces).every((marking) => marking === 0 || marking === 1) &&
+                Object.values(outputPlaces).every((marking) => marking === 0 || marking === 1)
+            );
+        });
+
+        if (!isBinaryAndSafe) {
+            console.log("A rede de Petri não é binária ou segura.");
+            return false;
+        }
+
+        // Restante da função para verificar segurança...
+        // ...
+
+        console.log("A rede de Petri é binária e segura.");
+        return true;
+    }
+
     // Defining the Petri net
     /*const places = [
         new Place("P1", 1),
@@ -503,9 +522,9 @@ function teste(testnet) {
     for (const node of tree) {
         console.log(node);
     }
-
+    isBinaryAndSafe(petriNet);
     // Exibindo se a rede é segura
-    petriNet.isSafe();
+    //petriNet.isSafe();
     petriNet.isConservative();
     petriNet.isReversible();
     petriNet.runSingleIteration();
@@ -702,15 +721,15 @@ function teste(testnet) {
 
                 );
 
-           /* function isDeadlock(state) {
-                // Verifica se o estado está em Deadlock com base na informação reachableStates
-                return reachableStates.some((reachableState) => {
-                    return (
-                        reachableState.includes(state) &&
-                        reachableState.includes("Deadlock")
-                    );
-                });
-            }*/
+            /* function isDeadlock(state) {
+                 // Verifica se o estado está em Deadlock com base na informação reachableStates
+                 return reachableStates.some((reachableState) => {
+                     return (
+                         reachableState.includes(state) &&
+                         reachableState.includes("Deadlock")
+                     );
+                 });
+             }*/
         }
 
         // Exemplo de uso
@@ -722,4 +741,4 @@ function teste(testnet) {
         console.log("Node Map:", nodeMap); // Exibir o mapa de nós para verificação
     }
 }
-export {teste}
+export { teste }
