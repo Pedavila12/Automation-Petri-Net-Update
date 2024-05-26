@@ -11,6 +11,7 @@ import Vector from "./utils/Vector.js";
 import { delay } from "./utils/utils.js";
 import { PetriNetData } from "./PNData.js";
 import { SimulationError } from "./LogicalNet.js";
+//teste de commit
 
 const FILE_PICKER_OPTIONS = {
     types: [{
