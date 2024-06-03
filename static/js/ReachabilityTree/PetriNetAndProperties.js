@@ -222,6 +222,12 @@ function interpretReachabilityTree(treeData) {
 
 //Função que recebe a rede de petri pela classe instanciada petriClass e retorna se a rede é segura ou binária
 function isBinaryAndSafe(net) {
+    const numPlaces = Object.keys(net.places).length;
+    const numTransitions = net.transitions.length;
+    if (numPlaces === 0 || numTransitions === 0) {
+        console.log("A rede de Petri não é binária ou segura.");
+        return "There is no Petri Net for analysis.";
+    }
     // Verifica se a rede de Petri é binária e se todas as marcações são 0 ou 1
     const isBinaryAndSafe = net.transitions.every((transition) => {
         const inputPlaces = transition.inputPlaces;
@@ -235,15 +241,21 @@ function isBinaryAndSafe(net) {
 
     if (!isBinaryAndSafe) {
         console.log("A rede de Petri não é binária ou segura.");
-        return false;
+        return "A rede de Petri não é binária ou segura.";
     }
 
     console.log("A rede de Petri é binária e segura.");
-    return true;
+    return "A rede de Petri é binária e segura."
 }
 
 //Verifica se a rede de petri é conservativa através do somatório de marcações que devem permanecer constantes 
-function isConservative(treeNodes) {
+function isConservative(treeNodes,net) {
+    const numPlaces = Object.keys(net.places).length;
+    const numTransitions = net.transitions.length;
+    if (numPlaces === 0 || numTransitions === 0) {
+        console.log("A rede de Petri não é binária ou segura.");
+        return "There is no Petri Net for analysis.";
+    }
     // Função para calcular a somatória dos markings de um estado
     function calculateMarkingsSum(state) {
         return Object.values(state).reduce((sum, marking) => sum + marking, 0);
@@ -258,18 +270,25 @@ function isConservative(treeNodes) {
     // Verifica se todas as somatórias são iguais à referência
     const result = markingsSums.every((sum) => sum === referenceSum);
 
-    if (result) {
-        console.log("A rede de Petri é conservativa.");
-    } else {
+    if (!result) {
         console.log("A rede de Petri não é conservativa.");
+        return "A rede de Petri não é conservativa."
     }
 
-    return result;
+    console.log("A rede de Petri é conservativa.")
+    return "A rede de Petri é conservativa.";
 }
 
 //Verificar se a rede de petri é reversivel isso através de uma estrutura de repetição que verifica se a rede consegue sempre se reiniciar
 
 function isReversible(net) {
+    const numPlaces = Object.keys(net.places).length;
+    const numTransitions = net.transitions.length;
+    if (numPlaces === 0 || numTransitions === 0) {
+        console.log("A rede de Petri não é binária ou segura.");
+        return "There is no Petri Net for analysis.";
+    }
+
     const initialState = Object.fromEntries(
         Object.entries(net.places).map(([p, place]) => [p, place.marking])
     );
@@ -317,8 +336,14 @@ function isReversible(net) {
         }
     }
 
+
+    if (!isReversible) {
+        console.log("A rede de Petri não é reversível.");
+        return "A rede de Petri não é reversível.";
+    }
+
     console.log("A rede de Petri é reversível.");
-    return true;
+    return "A rede de Petri é reversível.";
 }
 
 //Recebe a rede petri da classe PetriClass e retorna as matrizes E,S e C, não está sendo utilizada ainda

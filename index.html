@@ -28,10 +28,23 @@
             margin: 0;
         }
 
+        .content {
+            display: none;
+        }
+
         .flex-row {
             display: flex;
             flex-direction: row;
             height: 100%;
+        }
+
+        .center {
+            text-align: center;
+            top: 50%;
+            /* centraliza verticalmente */
+            left: 50%;
+            /* centraliza horizontalmente */
+
         }
 
         .editor {
@@ -88,6 +101,14 @@
             padding-bottom: 10px;
         }
 
+        #property-modal {
+            /*height: 60vh;
+            width: 60vh;
+             padding-top: 10px; 
+             display: block;*/
+            padding-bottom: 10px;
+        }
+
         .plottree {
             zoom: 0.8;
         }
@@ -97,6 +118,17 @@
             stroke: #000;
             /* Cor da linha - ajuste conforme necessário */
             stroke-width: 2.5px;
+        }
+
+        .styled-content {
+            font-size: 1.5em;
+            /* Aumenta o tamanho da fonte */
+            font-weight: 350;
+            /* Torna o texto mais grosso, mas não tanto quanto bold */
+            text-align: center;
+            /* Centraliza o texto */
+            margin-top: 20px;
+            /* Adiciona um pouco de margem superior para espaçamento */
         }
 
         #alpha-version {
@@ -152,6 +184,22 @@
         <button id="nav-btn-gencode">Generate Code</button>
         <!--<button onclick="window.generateTree()">Generate Tree</button>-->
         <button id="nav-btn-gentree">Generate Tree</button>
+        <button id="nav-btn-property">Properties</button>
+        <!-- <div class="dropdown">
+            <button class="dropbtn">Properties
+                <i class="fa fa-caret-down"></i>
+            </button>
+            <div class="dropdown-content">
+                <a id="nav-btn-property-safety">Safety</a>
+                <a id="nav-btn-property-boundedness">Boundedness</a>
+                <a id="nav-btn-property-conservation">Conservation</a>
+                <a id="nav-btn-property-reversibility">Reversibility</a>
+                <a id="nav-btn-property-place-invariant">Place Invariant</a>
+                <a id="nav-btn-property-transition-invariant">Transition Invariant</a>
+                <a id="nav-btn-property-markin-reachability">Markin Reachability</a>
+                <a id="nav-btn-property-all">All</a>
+            </div>
+        </div> -->
         <span id="alpha-version">Alpha Version</span>
     </div>
 
@@ -247,6 +295,46 @@
 
         <div class="modal-footer">
             <button id="gentree-close" class="btn btn-secondary">Close</button>
+        </div>
+    </dialog>
+
+    <dialog id="property-modal" class="modal">
+        <div class="modal-header">
+            <h2>Properties</h2>
+            <span id="property-modal-close" class="modal-close">&times;</span>
+        </div>
+        <div>
+            <div>
+                <div class="input-buttons">
+                    <button id="select-property-safety" class="btn btn-primary">
+                        Safety and Binary
+                    </button>
+                    <button id="select-property-boundedness" class="btn btn-primary">
+                        Limitation
+                    </button>
+                    <button id="select-property-conservation" class="btn btn-primary">
+                        Conservation
+                    </button>
+                    <button id="select-property-reversibility" class="btn btn-primary">
+                        Reversibility
+                    </button>
+                    <button id="select-property-markin-reachability" class="btn btn-primary">
+                        Markin Reachability
+                    </button>
+                </div>
+
+            </div>
+            <div class="styled-content" id="property-text">
+                <h2 class="center">Select the desired property</h2>
+            </div>
+        </div>
+        <div class="styled-content">
+            <div id="property-container">
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button id="property-close" class="btn btn-secondary">Close</button>
         </div>
     </dialog>
 

@@ -73,6 +73,7 @@ export class Application {
         this.bindGenCodeButtons();
         this.addEditorEventListeners();
         this.bindGenTreeButtons();
+        this.bindPropertiesButtons();
         this.setTheme(localStorage.getItem("theme") ?? "light");
     }
     getEditor() {
@@ -242,7 +243,7 @@ export class Application {
                 genTreeModal.showModal();
                 //Chama a rede de petri desenhada em tela
                 const netData = this.editor.net.getNetData();
-                //Converte a rede de petri para o formato utilizano no render
+                //Converte a rede de petri para o formato utilizando no render
                 const customFormatNet = ConvertPetriNet(netData);
                 //Definir os lugares e transições para chamar as funções de tratamento e renderização da arvore de alcansabilidade
                 const places = customFormatNet.places;
@@ -263,7 +264,7 @@ export class Application {
                 //Exemplo de uso da propriedade de limitação
                 petriClass.limitOfPetriNet();
                 //Exemplo de uso da propriedade de alcançabilidade
-                const targetMarking = { 'p1': 0, 'p2': 0, 'p3': 0,'p4': 1, 'p5': 1, 'p6': 1 };
+                const targetMarking = { 'p1': 0, 'p2': 0, 'p3': 0, 'p4': 1, 'p5': 1, 'p6': 1 };
                 const isReachable = isMarkingReachable(interpretedTree, targetMarking);
                 if (isReachable) {
                     console.log("A Marcação é alçavel.");
@@ -296,6 +297,125 @@ export class Application {
             btn.onclick = handler;
         }
     }
+
+    // bindPropertiesButtons() {
+    //     const propriertyModal = document
+    //         .getElementById('property-modal');
+    //     const propertyContainer = document.getElementById('property-container');
+    //     const handlers = {
+    //         "nav-btn-property": () => {
+    //             // if (!this.editor)
+    //             //     return;
+    //             propertyContainer.innerHTML = '';
+    //             propriertyModal.showModal();
+
+    //             document.getElementById('select-property-safety')
+    //                 .onclick = () => console.log("Teste2");
+    //             document.getElementById('select-property-boundedness')
+    //                 .onclick = this.close;
+    //             document.getElementById('select-property-conservation')
+    //                 .onclick = this.close;
+    //             document.getElementById('select-property-reversibility')
+    //                 .onclick = () => this.save();
+    //             document.getElementById('select-property-markin-reachability')
+    //                 .onclick = () => this.save();
+
+    //             // const netData = this.editor.net.getNetData();
+    //             // const customFormatNet = ConvertPetriNet(netData);
+
+    //             // const places = customFormatNet.places;
+    //             // const transitions = customFormatNet.transitions;
+    //             // const petriClass = new PetriClass(places, transitions);
+    //             // const initialState = Object.fromEntries(
+    //             //     places.map((place) => [place.name, place.marking])
+    //             // );
+    //             // const tree = reachabilityTree(petriClass, initialState);
+    //             // const interpretedTree = interpretReachabilityTree(tree);
+
+    //             // isBinaryAndSafe(petriClass);
+    //         },
+    //         "property-modal-close": () => {
+    //             propriertyModal.close();
+    //         },
+    //         "property-close": () => {
+    //             propriertyModal.close();
+    //         },
+    //     };
+    //     for (const [btnId, handler] of Object.entries(handlers)) {
+    //         const btn = document.getElementById(btnId);
+    //         btn.onclick = handler;
+    //     }
+    // }
+
+    bindPropertiesButtons() {
+        const propriertyModal = document.getElementById('property-modal');
+        const propertyContainer = document.getElementById('property-container');
+        
+        const handlers = {
+            "nav-btn-property": () => {
+                propertyContainer.innerHTML = '';
+                propriertyModal.showModal();
+    
+                if (!this.editor)
+                    return;
+    
+                const netData = this.editor.net.getNetData();
+                const customFormatNet = ConvertPetriNet(netData);
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                const initialState = Object.fromEntries(
+                    places.map((place) => [place.name, place.marking])
+                );
+                const tree = reachabilityTree(petriClass, initialState);
+                const interpretedTree = interpretReachabilityTree(tree);
+                renderReachabilityTree(interpretedTree);
+    
+                // Atualizando o conteúdo da modal para cada clique
+                updateContent("select-property-safety", isBinaryAndSafe(petriClass));
+                updateContent("select-property-boundedness", getContentForBoundedness());
+                updateContent("select-property-conservation", isConservative(interpretedTree,petriClass));
+                updateContent("select-property-reversibility", isReversible(petriClass));
+                updateContent("select-property-markin-reachability", getContentForMarkinReachability());
+            },
+            "property-modal-close": () => {
+                propriertyModal.close();
+                resetPropertyContainer();
+            },
+            "property-close": () => {
+                propriertyModal.close();
+                resetPropertyContainer();
+            },
+        };
+    
+        // Adiciona manipuladores de evento aos botões
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            btn.onclick = handler;
+        }
+    
+        // Função para atualizar o conteúdo na modal
+        function updateContent(btnId, content) {
+            document.getElementById(btnId).onclick = () => {
+                document.getElementById('property-text').innerText = content;
+            };
+        }
+    
+        // Funções para obter o conteúdo
+        function getContentForBoundedness() {
+            return "Conteúdo para Limitation";
+        }
+
+    
+        function getContentForMarkinReachability() {
+            return "Conteúdo para markin reachability";
+        }
+        // Função para redefinir o conteúdo do propertyContainer
+    function resetPropertyContainer() {
+        propertyContainer.innerHTML = 'Select the desired property'; // Substitua por seu conteúdo padrão
+    }
+    }
+
     bindSimulationButtons() {
         const handlers = {
             start: () => {
@@ -423,4 +543,6 @@ export class Application {
             evt.preventDefault();
         }, false);
     }
+
+    
 }
