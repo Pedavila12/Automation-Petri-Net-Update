@@ -60,7 +60,7 @@ class PetriClass {
 
         if (fireableTransitions.length === 0) {
             console.log("A rede de Petri é limitada em k =", maxRequiredTokens);
-            return maxRequiredTokens;
+            return "There is no Petri Net for analysis.";
         }
 
         const randomTransition =
@@ -77,7 +77,7 @@ class PetriClass {
 
         console.log("A rede é limitada a K = ", maxRequiredTokens);
 
-        return maxRequiredTokens;
+        return "This Petri Net is limited in k = " + maxRequiredTokens;
     }
 
     getMaxRequiredTokens() {
@@ -282,6 +282,7 @@ function isConservative(treeNodes,net) {
 //Verificar se a rede de petri é reversivel isso através de uma estrutura de repetição que verifica se a rede consegue sempre se reiniciar
 
 function isReversible(net) {
+    console.log("net:", net);
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
     if (numPlaces === 0 || numTransitions === 0) {
@@ -346,8 +347,10 @@ function isReversible(net) {
     return "A rede de Petri é reversível.";
 }
 
+
 //Recebe a rede petri da classe PetriClass e retorna as matrizes E,S e C, não está sendo utilizada ainda
 function getMatrices(net) {
+    console.log("net:", net);
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
 
@@ -380,7 +383,9 @@ function getMatrices(net) {
         }
     }
 
+    console.log({ C, E, S });
     return { C, E, S };
+
 }
 
 //Recebe como parametro o retorno da função interpretedTree e a marcação que deseja verificar a Alcaçabilidade

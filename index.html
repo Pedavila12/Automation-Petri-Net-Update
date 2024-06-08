@@ -109,6 +109,14 @@
             padding-bottom: 10px;
         }
 
+        #matrix-modal {
+            /*height: 60vh;
+            width: 60vh;
+             padding-top: 10px; 
+             display: block;*/
+            padding-bottom: 10px;
+        }
+
         .plottree {
             zoom: 0.8;
         }
@@ -185,6 +193,7 @@
         <!--<button onclick="window.generateTree()">Generate Tree</button>-->
         <button id="nav-btn-gentree">Generate Tree</button>
         <button id="nav-btn-property">Properties</button>
+        <button id="nav-btn-modal">Matrix</button>
         <!-- <div class="dropdown">
             <button class="dropbtn">Properties
                 <i class="fa fa-caret-down"></i>
@@ -298,7 +307,54 @@
         </div>
     </dialog>
 
+     <!--Geração das propriedades-->
     <dialog id="property-modal" class="modal">
+        <div class="modal-header">
+            <h2>Properties</h2>
+            <span id="property-modal-close" class="modal-close">&times;</span>
+        </div>
+        <div>
+            <div class="styled-content" id="property-text">
+                <h2 class="center">Select the desired property</h2>
+            </div>
+        </div>
+        <div class="styled-content">
+            <div id="property-container">
+            </div>
+        </div>
+
+        <div class="modal-footer">
+            <button id="property-close" class="btn btn-secondary">Close</button>
+        </div>
+    </dialog>
+
+    <dialog id="matrix-modal" class="modal">
+        <div class="modal-header">
+            <h2>Matrizes</h2>
+            <span id="matrix-modal-close" class="modal-close">&times;</span>
+        </div>
+        <div>
+            <div class="styled-content" id="matrix-text">
+                <h2 class="center">Matrizes C, E e S</h2>
+            </div>
+        </div>
+        <div class="styled-content">
+            <div id="matrix-container">
+                <h3>Matriz C:</h3>
+                <pre id="matrix-c"></pre>
+                <h3>Matriz E:</h3>
+                <pre id="matrix-e"></pre>
+                <h3>Matriz S:</h3>
+                <pre id="matrix-s"></pre>
+            </div>
+        </div>
+    
+        <div class="modal-footer">
+            <button id="matrix-close" class="btn btn-secondary">Fechar</button>
+        </div>
+    </dialog>
+
+    <!-- <dialog id="property-modal" class="modal">
         <div class="modal-header">
             <h2>Properties</h2>
             <span id="property-modal-close" class="modal-close">&times;</span>
@@ -336,7 +392,7 @@
         <div class="modal-footer">
             <button id="property-close" class="btn btn-secondary">Close</button>
         </div>
-    </dialog>
+    </dialog> -->
 
     <dialog id="inputs-modal" class="modal">
         <template id="input-row">

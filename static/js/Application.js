@@ -74,6 +74,7 @@ export class Application {
         this.addEditorEventListeners();
         this.bindGenTreeButtons();
         this.bindPropertiesButtons();
+        this.BindMatrixButtons();
         this.setTheme(localStorage.getItem("theme") ?? "light");
     }
     getEditor() {
@@ -350,15 +351,15 @@ export class Application {
     bindPropertiesButtons() {
         const propriertyModal = document.getElementById('property-modal');
         const propertyContainer = document.getElementById('property-container');
-        
+
         const handlers = {
             "nav-btn-property": () => {
                 propertyContainer.innerHTML = '';
                 propriertyModal.showModal();
-    
+
                 if (!this.editor)
                     return;
-    
+
                 const netData = this.editor.net.getNetData();
                 const customFormatNet = ConvertPetriNet(netData);
                 const places = customFormatNet.places;
@@ -370,13 +371,9 @@ export class Application {
                 const tree = reachabilityTree(petriClass, initialState);
                 const interpretedTree = interpretReachabilityTree(tree);
                 renderReachabilityTree(interpretedTree);
-    
-                // Atualizando o conteúdo da modal para cada clique
-                updateContent("select-property-safety", isBinaryAndSafe(petriClass));
-                updateContent("select-property-boundedness", getContentForBoundedness());
-                updateContent("select-property-conservation", isConservative(interpretedTree,petriClass));
-                updateContent("select-property-reversibility", isReversible(petriClass));
-                updateContent("select-property-markin-reachability", getContentForMarkinReachability());
+
+                // Atualizando o conteúdo da modal com todas as propriedades
+                updateAllProperties(petriClass, interpretedTree);
             },
             "property-modal-close": () => {
                 propriertyModal.close();
@@ -387,33 +384,143 @@ export class Application {
                 resetPropertyContainer();
             },
         };
-    
+
         // Adiciona manipuladores de evento aos botões
         for (const [btnId, handler] of Object.entries(handlers)) {
             const btn = document.getElementById(btnId);
             btn.onclick = handler;
         }
-    
-        // Função para atualizar o conteúdo na modal
-        function updateContent(btnId, content) {
-            document.getElementById(btnId).onclick = () => {
-                document.getElementById('property-text').innerText = content;
-            };
-        }
-    
-        // Funções para obter o conteúdo
-        function getContentForBoundedness() {
-            return "Conteúdo para Limitation";
+
+        // Função para atualizar o conteúdo na modal com todas as propriedades em uma tabela
+        function updateAllProperties(petriClass, interpretedTree) {
+            const safetyContent = isBinaryAndSafe(petriClass);
+            const vivacityContent = getContentForVivacity();
+            const conservationContent = isConservative(interpretedTree, petriClass);
+            const reversibilityContent = isReversible(petriClass);
+            const markinReachabilityContent = getContentForMarkinReachability();
+            const limitationContent = petriClass.limitOfPetriNet();
+
+            const tableContent = `
+                <style>
+                    .property-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+                    .property-table th, .property-table td {
+                        border: 1px solid black;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    .property-table th {
+                        background-color: #f2f2f2;
+                    }
+                    .property-table td {
+                        background-color: #fff;
+                    }
+                    .property-table tr {
+                        height: 40px;
+                    }
+                </style>
+                <table class="property-table">
+                    <thead>
+                        <tr>
+                            <th>Propierties</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Safety and Binary</td>
+                            <td>${safetyContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Vivacity</td>
+                            <td>${vivacityContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Conservation</td>
+                            <td>${conservationContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Reversibility</td>
+                            <td>${reversibilityContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Limitation</td>
+                            <td>${limitationContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Marking Reachability</td>
+                            <td>${markinReachabilityContent}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            `;
+
+            document.getElementById('property-text').innerHTML = tableContent;
         }
 
-    
+        // Funções para obter o conteúdo
+        function getContentForVivacity() {
+            return "Conteúdo para Vivacity";
+        }
+
         function getContentForMarkinReachability() {
             return "Conteúdo para markin reachability";
         }
+
         // Função para redefinir o conteúdo do propertyContainer
-    function resetPropertyContainer() {
-        propertyContainer.innerHTML = 'Select the desired property'; // Substitua por seu conteúdo padrão
+        function resetPropertyContainer() {
+            propertyContainer.innerHTML = 'Select the desired property'; // Substitua por seu conteúdo padrão
+        }
     }
+
+    BindMatrixButtons() {
+        const matrixModal = document.getElementById('matrix-modal');
+        const matrixContainer = document.getElementById('matrix-container');
+
+        const handlers = {
+            "nav-btn-modal": () => {
+                matrixContainer.innerHTML = '';
+                matrixModal.showModal();
+
+                if (!this.editor)
+                    return;
+                    const netData = this.editor.net.getNetData();
+                    const customFormatNet = ConvertPetriNet(netData);
+                    const places = customFormatNet.places;
+                    const transitions = customFormatNet.transitions;
+                    const petriClass = new PetriClass(places, transitions);
+                    openMatrixModal(petriClass);
+                    getMatrices(petriClass);
+                },
+
+                "matrix-modal-close": () => {
+                    matrixModal.close();
+                    resetPropertyContainer();
+                },
+                "matrix-close": () => {
+                    matrixModal.close();
+                    resetPropertyContainer();
+                },
+            }
+            
+
+            // Adiciona manipuladores de evento aos botões
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            btn.onclick = handler;
+        }
+
+        function openMatrixModal(petriClass) {
+            
+            const matrices = getMatrices(petriClass);
+            document.getElementById("matrix-c").innerText = JSON.stringify(matrices.C, null, 2);
+            document.getElementById("matrix-e").innerText = JSON.stringify(matrices.E, null, 2);
+            document.getElementById("matrix-s").innerText = JSON.stringify(matrices.S, null, 2);
+            document.getElementById("matrix-modal").showModal();
+        }
+
     }
 
     bindSimulationButtons() {
@@ -544,5 +651,5 @@ export class Application {
         }, false);
     }
 
-    
+
 }
