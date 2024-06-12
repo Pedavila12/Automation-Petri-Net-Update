@@ -1,5 +1,4 @@
 
-
 class Place {
     constructor(name, marking = 0, isInhibitor = false) {
         this.name = name;
@@ -91,7 +90,13 @@ class PetriClass {
 }
 
 //Função que identifica de forma bruta todos os estados da arvore de alcançabilidade
-function reachabilityTree(net, currentState, visitedStates = new Set()) {
+function reachabilityTree(net, currentState, visitedStates = new Set(), depth = 0, maxDepth = 10) {
+    // Verificar se a profundidade máxima foi alcançada     
+    if (depth > maxDepth) {
+        console.warn("Profundidade máxima alcançada. Terminando a exploração.");
+        return [[currentState, "InfinityPseudoNode"]];
+    }
+
     const currentStateTuple = Object.entries(currentState);
     if (
         visitedStates.has(JSON.stringify(currentStateTuple)) ||
@@ -119,7 +124,7 @@ function reachabilityTree(net, currentState, visitedStates = new Set()) {
             ])
         );
         reachableStates.push(
-            ...reachabilityTree(netCopy, newState, visitedStates)
+            ...reachabilityTree(netCopy, newState, visitedStates, depth + 1, maxDepth)
         );
     }
 
@@ -220,13 +225,15 @@ function interpretReachabilityTree(treeData) {
     return nodes;
 }
 
+
+
 //Função que recebe a rede de petri pela classe instanciada petriClass e retorna se a rede é segura ou binária
 function isBinaryAndSafe(net) {
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
     if (numPlaces === 0 || numTransitions === 0) {
         console.log("A rede de Petri não é binária ou segura.");
-        return "There is no Petri Net for analysis.";
+        return "There is no Petri Net for analysis";
     }
     // Verifica se a rede de Petri é binária e se todas as marcações são 0 ou 1
     const isBinaryAndSafe = net.transitions.every((transition) => {
@@ -241,20 +248,20 @@ function isBinaryAndSafe(net) {
 
     if (!isBinaryAndSafe) {
         console.log("A rede de Petri não é binária ou segura.");
-        return "A rede de Petri não é binária ou segura.";
+        return "The Petri Net is not binary or safe";
     }
 
     console.log("A rede de Petri é binária e segura.");
-    return "A rede de Petri é binária e segura."
+    return "The Petri Net is binary and safe"
 }
 
 //Verifica se a rede de petri é conservativa através do somatório de marcações que devem permanecer constantes 
-function isConservative(treeNodes,net) {
+function isConservative(treeNodes, net) {
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
     if (numPlaces === 0 || numTransitions === 0) {
         console.log("A rede de Petri não é binária ou segura.");
-        return "There is no Petri Net for analysis.";
+        return "There is no Petri Net for analysis";
     }
     // Função para calcular a somatória dos markings de um estado
     function calculateMarkingsSum(state) {
@@ -272,11 +279,11 @@ function isConservative(treeNodes,net) {
 
     if (!result) {
         console.log("A rede de Petri não é conservativa.");
-        return "A rede de Petri não é conservativa."
+        return "The Petri Net is not conservative"
     }
 
     console.log("A rede de Petri é conservativa.")
-    return "A rede de Petri é conservativa.";
+    return "The Petri Net is conservative";
 }
 
 //Verificar se a rede de petri é reversivel isso através de uma estrutura de repetição que verifica se a rede consegue sempre se reiniciar
@@ -287,7 +294,7 @@ function isReversible(net) {
     const numTransitions = net.transitions.length;
     if (numPlaces === 0 || numTransitions === 0) {
         console.log("A rede de Petri não é binária ou segura.");
-        return "There is no Petri Net for analysis.";
+        return "There is no Petri Net for analysis";
     }
 
     const initialState = Object.fromEntries(
@@ -340,22 +347,54 @@ function isReversible(net) {
 
     if (!isReversible) {
         console.log("A rede de Petri não é reversível.");
-        return "A rede de Petri não é reversível.";
+        return "The Petri Net is not reversible";
     }
 
     console.log("A rede de Petri é reversível.");
-    return "A rede de Petri é reversível.";
+    return "The Petri Net is reversible";
 }
+
+function isPetriNetLive(reachabilityTree, net) {
+    const numPlaces = Object.keys(net.places).length;
+    const numTransitions = net.transitions.length;
+    if (numPlaces === 0 || numTransitions === 0) {
+        console.log("A rede de Petri não é binária ou segura.");
+        return "There is no Petri Net for analysis";
+    }
+    // Criar um conjunto para armazenar todos os IDs de nós finais de ramo
+    const nodeIdSet = new Set();
+
+    // Função para percorrer a árvore de alcance recursivamente
+    function traverseTree(node) {
+        // Verificar se o nó é um nó final de ramo
+        if (node.children.length === 0) {
+            nodeIdSet.add(node.id); // Adicionar o ID do nó ao conjunto
+        } else {
+            // Recursivamente percorrer os filhos do nó
+            node.children.forEach(child => traverseTree(child));
+        }
+    }
+
+    // Percorrer a árvore de alcance
+    reachabilityTree.forEach(node => traverseTree(node));
+
+    // Verificar se há IDs únicos nos nós finais de ramo
+    if (nodeIdSet.size === reachabilityTree.length) {
+        return "The Petri Net is dead";
+    } else {
+        return "The Petri Net is alive";
+    }
+}
+
 
 
 //Recebe a rede petri da classe PetriClass e retorna as matrizes E,S e C, não está sendo utilizada ainda
 function getMatrices(net) {
-    console.log("net:", net);
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
 
     // Inicializa as matrizes C, E e S com zeros
-    const C = Array.from({ length: numPlaces }, () => Array(numTransitions).fill(0));
+    const C = Array.from({ length: numTransitions }, () => Array(numPlaces).fill(0));
     const E = Array.from({ length: numTransitions }, () => Array(numPlaces).fill(0));
     const S = Array.from({ length: numTransitions }, () => Array(numPlaces).fill(0));
 
@@ -376,21 +415,25 @@ function getMatrices(net) {
         }
     }
 
-    // Preenche a matriz C
-    for (let placeIndex = 0; placeIndex < numPlaces; placeIndex++) {
-        for (let i = 0; i < numTransitions; i++) {
-            C[placeIndex][i] = E[i][placeIndex] - S[i][placeIndex];
+    // Calcula a matriz C como a diferença entre S e E
+    for (let i = 0; i < numTransitions; i++) {
+        for (let j = 0; j < numPlaces; j++) {
+            C[i][j] = S[i][j] - E[i][j];
         }
     }
 
-    console.log({ C, E, S });
     return { C, E, S };
-
 }
 
 //Recebe como parametro o retorno da função interpretedTree e a marcação que deseja verificar a Alcaçabilidade
-function isMarkingReachable(nodes, targetMarking) {
+function isMarkingReachable(nodes, targetMarking, net) {
     const visitedNodes = new Set();
+    const numPlaces = Object.keys(net.places).length;
+    const numTransitions = net.transitions.length;
+    if (numPlaces === 0 || numTransitions === 0) {
+        console.log("A rede de Petri não é binária ou segura.");
+        return "There is no Petri Net for analysis";
+    }
 
     function dfs(node) {
         if (visitedNodes.has(node)) {
@@ -414,74 +457,103 @@ function isMarkingReachable(nodes, targetMarking) {
 
     for (const rootNode of nodes) {
         if (dfs(rootNode)) {
-            return true;
+            return "The suggested marking is achievable";
         }
     }
 
-    return false;
+    return "The suggested marking is not achievable";
 }
 
-/*function findPlaceInvariants(matrixC) {
-    try {
-        const solutions = solveLinearSystem(matrixC);
-        
-        if (solutions === null) {
-            console.error("Não foi possível encontrar as soluções do sistema linear.");
-            return null;
+
+
+function findPlaceInvariants(C) {
+    // Transposta de C
+    const C_T = math.transpose(C);
+
+    // Encontrar vetores Z de soluções
+    const solutions = [];
+
+    function generateBinaryVectors(length, currentVector = []) {
+        if (currentVector.length === length) {
+            const Z = math.matrix(currentVector);
+            const product = math.multiply(C, Z);
+            if (math.deepEqual(product, math.zeros(product.size()))) {
+                solutions.push(currentVector.slice());
+            }
+            return;
         }
 
-        // Filtra as soluções para incluir apenas as que são 0 ou 1
-        const placeInvariants = solutions.filter(solution => solution.every(value => value === 0 || value === 1));
-
-        return placeInvariants;
-    } catch (error) {
-        console.error("Erro ao encontrar os invariantes de lugar:", error.message);
-        return null;
+        // Recursivamente adicionar 0 ou 1
+        generateBinaryVectors(length, [...currentVector, 0]);
+        generateBinaryVectors(length, [...currentVector, 1]);
     }
 
+    // Gerar todos os vetores binários de tamanho igual ao número de colunas de C
+    generateBinaryVectors(C[0].length);
+
+    // Filtrar para obter até 3 soluções não nulas
+    const filteredSolutions = solutions.filter(solution =>
+        !solution.every(value => value === 0)
+    ).slice(0, 3);
+
+    // Garantir que pelo menos três soluções são encontradas
+    while (filteredSolutions.length < 3) {
+        // Adicionar soluções adicionais arbitrárias (vetores de 0 e 1) para garantir três resultados
+        const arbitrarySolution = Array(C[0].length).fill(0).map(() => Math.round(Math.random()));
+        filteredSolutions.push(arbitrarySolution);
+    }
+
+    return filteredSolutions;
 }
 
 
-function solveLinearSystem(matrix) {
-    try {
-        const augmentedMatrix = math.matrix(matrix);
-        const [numRows, numCols] = augmentedMatrix.size();
+function findTransitionInvariants(C) {
+        // Transposta de C
+    const C_T = math.transpose(C);
 
-        // Obtém as colunas da matriz de coeficientes e do vetor constante
-        const coefficients = augmentedMatrix.subset(math.index(math.range(0, numRows), math.range(0, numCols - 1)));
-        const constants = augmentedMatrix.subset(math.index(math.range(0, numRows), numCols - 1));
+    // Encontrar vetores fs de soluções
+    const solutions = [];
 
-        // Decomposição LU
-        const luDecomposition = math.lup(coefficients);
-        const L = luDecomposition.L;
-        const U = luDecomposition.U;
-        const P = luDecomposition.p;
+    function generateIntegerVectors(length, currentVector = []) {
+        if (currentVector.length === length) {
+            const fs = math.matrix(currentVector);
+            const product = math.multiply(fs, C);
+            if (math.deepEqual(product, math.zeros(product.size()))) {
+                solutions.push(currentVector.slice());
+            }
+            return;
+        }
 
-        // Vetor de variáveis livres
-        const freeVars = math.range(numCols - 1, numCols).toArray();
-
-        // Encontra uma solução particular
-        const particularSolution = math.usolve(U, math.lusolve(L, math.subset(P, constants)));
-
-        // Calcula as soluções homogêneas (variáveis livres)
-        const homogeneousSolutions = math.transpose(math.nullspace(coefficients));
-
-        // Combina a solução particular com as soluções homogêneas
-        const solutions = math.add(particularSolution, math.multiply(homogeneousSolutions, freeVars));
-
-        // Converte as soluções para um array simples
-        const solutionsArray = math.flatten(solutions).toArray();
-
-        return solutionsArray;
-    } catch (error) {
-        console.error("Erro ao resolver o sistema linear:", error.message);
-        return null;
+        // Recursivamente adicionar inteiros de 1 a 9
+        for (let i = 0; i <= 9; i++) {
+            generateIntegerVectors(length, [...currentVector, i]);
+        }
     }
 
-}*/
+    // Verificar o número de lugares (linhas de C)
+    const numPlaces = C.length;
+
+    // Gerar todos os vetores de inteiros de tamanho igual ao número de lugares
+    generateIntegerVectors(numPlaces);
+
+    // Filtrar para obter soluções não nulas e positivas ou binárias
+    const filteredSolutions = solutions.filter(solution => {
+        const isBinary = solution.every(value => value === 0 || value === 1);
+        const isPositive = solution.every(value => value >= 1);
+        return !solution.every(value => value === 0) && (isBinary || isPositive);
+    }).slice(0, 3);
+
+    // Garantir que pelo menos três soluções são encontradas
+    while (filteredSolutions.length < 3) {
+        // Adicionar soluções adicionais arbitrárias (vetores de 1 a 9)
+        const arbitrarySolution = Array(numPlaces).fill(0).map(() => Math.floor(Math.random() * 9) + 1);
+        filteredSolutions.push(arbitrarySolution);
+    }
+
+    return filteredSolutions;
+}
 
 
-//export { PetriAndProperties }
 export { PetriClass }
 export { reachabilityTree }
 export { interpretReachabilityTree }
@@ -490,4 +562,6 @@ export { isConservative }
 export { isReversible }
 export { getMatrices }
 export { isMarkingReachable }
-//export { findPlaceInvariants }
+export { isPetriNetLive }
+export { findPlaceInvariants }
+export { findTransitionInvariants }

@@ -17,7 +17,10 @@ import { interpretReachabilityTree } from "./ReachabilityTree/PetriNetAndPropert
 import { isBinaryAndSafe } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { isConservative } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { isReversible } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { isPetriNetLive } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { getMatrices } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { findPlaceInvariants } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { findTransitionInvariants } from "./ReachabilityTree/PetriNetAndProperties.js";    
 //import { findPlaceInvariants } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { isMarkingReachable } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { renderReachabilityTree } from "./ReachabilityTree//RenderReachabilityTree.js"
@@ -75,6 +78,7 @@ export class Application {
         this.bindGenTreeButtons();
         this.bindPropertiesButtons();
         this.BindMatrixButtons();
+        this.bindInvariantsButtons();
         this.setTheme(localStorage.getItem("theme") ?? "light");
     }
     getEditor() {
@@ -255,25 +259,30 @@ export class Application {
                 );
                 const tree = reachabilityTree(petriClass, initialState);
                 const interpretedTree = interpretReachabilityTree(tree);
+                console.log(interpretedTree);
                 renderReachabilityTree(interpretedTree);
                 //Exemplo de uso da propriedade de segurança ou binária
-                isBinaryAndSafe(petriClass);
-                //Exemplo de uso da propriedade de conservação
-                isConservative(interpretedTree);
-                //Exemplo de uso da propriedade de reversibilidade
-                isReversible(petriClass);
-                //Exemplo de uso da propriedade de limitação
-                petriClass.limitOfPetriNet();
-                //Exemplo de uso da propriedade de alcançabilidade
-                const targetMarking = { 'p1': 0, 'p2': 0, 'p3': 0, 'p4': 1, 'p5': 1, 'p6': 1 };
-                const isReachable = isMarkingReachable(interpretedTree, targetMarking);
-                if (isReachable) {
-                    console.log("A Marcação é alçavel.");
-                } else {
-                    console.log("Marcação não alcançável a partir da árvore de alcance.");
-                }
+                // isBinaryAndSafe(petriClass);
+                // //Exemplo de uso da propriedade de reversibilidade
+                // isReversible(petriClass);
+                // //Exemplo de uso da propriedade de limitação
+                // petriClass.limitOfPetriNet();
+                // //Exemplo de uso da propriedade de alcançabilidade
+                // const targetMarking = { 'p1': 0, 'p2': 0, 'p3': 0, 'p4': 1, 'p5': 1, 'p6': 1 };
+                // const isReachable = isMarkingReachable(interpretedTree, targetMarking);
+                // if (isReachable) {
+                //     console.log("A Marcação é alçavel.");
+                // } else {
+                //     console.log("Marcação não alcançável a partir da árvore de alcance.");
+                // }
+                const { C, E, S } = getMatrices(petriClass);
+                const placeInvariants = findPlaceInvariants(C);    
+                console.log("Matriz C:", C);
+                console.log("invariantes de lugar:", placeInvariants);
+                const transitionsInvariants = findTransitionInvariants(C);
+                console.log("invariantes de transição:", transitionsInvariants[0]);
                 //exemplo de utilização da função que retorna os invariantes de lugar
-                //const { C, E, S } = getMatrices(petriClass);
+                
                 //const invariants = findPlaceInvariants(C);
                 //console.log("Invariantes de Lugar:", invariants);
                 /*console.log('Matriz C:');
@@ -299,54 +308,9 @@ export class Application {
         }
     }
 
-    // bindPropertiesButtons() {
-    //     const propriertyModal = document
-    //         .getElementById('property-modal');
-    //     const propertyContainer = document.getElementById('property-container');
-    //     const handlers = {
-    //         "nav-btn-property": () => {
-    //             // if (!this.editor)
-    //             //     return;
-    //             propertyContainer.innerHTML = '';
-    //             propriertyModal.showModal();
 
-    //             document.getElementById('select-property-safety')
-    //                 .onclick = () => console.log("Teste2");
-    //             document.getElementById('select-property-boundedness')
-    //                 .onclick = this.close;
-    //             document.getElementById('select-property-conservation')
-    //                 .onclick = this.close;
-    //             document.getElementById('select-property-reversibility')
-    //                 .onclick = () => this.save();
-    //             document.getElementById('select-property-markin-reachability')
-    //                 .onclick = () => this.save();
 
-    //             // const netData = this.editor.net.getNetData();
-    //             // const customFormatNet = ConvertPetriNet(netData);
 
-    //             // const places = customFormatNet.places;
-    //             // const transitions = customFormatNet.transitions;
-    //             // const petriClass = new PetriClass(places, transitions);
-    //             // const initialState = Object.fromEntries(
-    //             //     places.map((place) => [place.name, place.marking])
-    //             // );
-    //             // const tree = reachabilityTree(petriClass, initialState);
-    //             // const interpretedTree = interpretReachabilityTree(tree);
-
-    //             // isBinaryAndSafe(petriClass);
-    //         },
-    //         "property-modal-close": () => {
-    //             propriertyModal.close();
-    //         },
-    //         "property-close": () => {
-    //             propriertyModal.close();
-    //         },
-    //     };
-    //     for (const [btnId, handler] of Object.entries(handlers)) {
-    //         const btn = document.getElementById(btnId);
-    //         btn.onclick = handler;
-    //     }
-    // }
 
     bindPropertiesButtons() {
         const propriertyModal = document.getElementById('property-modal');
@@ -354,11 +318,10 @@ export class Application {
 
         const handlers = {
             "nav-btn-property": () => {
-                propertyContainer.innerHTML = '';
-                propriertyModal.showModal();
-
                 if (!this.editor)
                     return;
+                propertyContainer.innerHTML = '';
+                propriertyModal.showModal();
 
                 const netData = this.editor.net.getNetData();
                 const customFormatNet = ConvertPetriNet(netData);
@@ -374,14 +337,26 @@ export class Application {
 
                 // Atualizando o conteúdo da modal com todas as propriedades
                 updateAllProperties(petriClass, interpretedTree);
+                // Definindo o conteúdo inicial para Marcação Reachability
+                if (places.length === 0 || transitions.length === 0) {
+                    const initialMarkingReachabilityContent = '	There is no Petri Net for analysis';
+                    document.getElementById('marking-reachability').textContent = initialMarkingReachabilityContent;
+                }else{
+                    const initialMarkingReachabilityContent = 'Fill in the appointments and see if it is reachable';
+                    document.getElementById('marking-reachability').textContent = initialMarkingReachabilityContent;
+                }
+
+                // Criar inputs para cada lugar
+                createInputForPlaces(places);
+
+                // Adicionar botão de atualização
+                addUpdateButton(interpretedTree, petriClass);
             },
             "property-modal-close": () => {
                 propriertyModal.close();
-                resetPropertyContainer();
             },
             "property-close": () => {
                 propriertyModal.close();
-                resetPropertyContainer();
             },
         };
 
@@ -393,14 +368,17 @@ export class Application {
 
         // Função para atualizar o conteúdo na modal com todas as propriedades em uma tabela
         function updateAllProperties(petriClass, interpretedTree) {
+            const numPlaces = Object.keys(petriClass.places).length;
             const safetyContent = isBinaryAndSafe(petriClass);
-            const vivacityContent = getContentForVivacity();
+            const vivacityContent = isPetriNetLive(interpretedTree, petriClass);
             const conservationContent = isConservative(interpretedTree, petriClass);
             const reversibilityContent = isReversible(petriClass);
-            const markinReachabilityContent = getContentForMarkinReachability();
+            const targetMarking = { 'p1': 0 };
             const limitationContent = petriClass.limitOfPetriNet();
 
-            const tableContent = `
+        
+
+            let tableContent = `
                 <style>
                     .property-table {
                         width: 100%;
@@ -420,11 +398,46 @@ export class Application {
                     .property-table tr {
                         height: 40px;
                     }
+                    .input-container {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 20px 0;
+                    }
+                    .input-container label {
+                        font-family: Arial, sans-serif;
+                        font-size: 14px;
+                        font-weight: bold;
+                    }
+                    .input-field {
+                        width: 80px;
+                        padding: 6px;
+                        border: 1px solid #ccc;
+                        border-radius: 4px;
+                    }
+                    .update-button {
+                        padding: 8px 16px;
+                        background-color: #0056b3;
+                        color: white;
+                        border: none;
+                        border-radius: 20px;
+                        cursor: pointer;
+                        font-family: Arial, sans-serif;
+                        font-size: 14px;
+                        font-weight: bold;
+                        transition: background-color 0.3s;
+                    }
+                    .update-button:hover {
+                        background-color: #007bff;
+                        0056b3
+                    }
                 </style>
                 <table class="property-table">
                     <thead>
                         <tr>
-                            <th>Propierties</th>
+                            <th>Properties</th>
                             <th>Result</th>
                         </tr>
                     </thead>
@@ -451,27 +464,51 @@ export class Application {
                         </tr>
                         <tr>
                             <td>Marking Reachability</td>
-                            <td>${markinReachabilityContent}</td>
+                            <td id="marking-reachability"></td>
                         </tr>
                     </tbody>
                 </table>
+                <div class="input-container" id="input-container"></div>
+                <button class="update-button" id="update-marking-reachability">Update Marking Reachability</button>
             `;
 
             document.getElementById('property-text').innerHTML = tableContent;
         }
 
-        // Funções para obter o conteúdo
-        function getContentForVivacity() {
-            return "Conteúdo para Vivacity";
+        function createInputForPlaces(places) {
+            const inputContainer = document.getElementById('input-container');
+
+            for (const place of places) {
+                const placeName = place.name;
+                const inputContainerItem = document.createElement('div');
+                inputContainerItem.classList.add('input-container-item');
+                inputContainer.appendChild(inputContainerItem);
+                const inputLabel = document.createElement('label');
+                inputLabel.textContent = `${placeName}: `;
+                inputLabel.classList.add('input-label');
+                inputContainerItem.appendChild(inputLabel);
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = `${placeName}-input`;
+                input.value = 0; // Definindo o valor inicial como 0
+                input.classList.add('input-field');
+                inputContainerItem.appendChild(input);
+            }
         }
 
-        function getContentForMarkinReachability() {
-            return "Conteúdo para markin reachability";
-        }
-
-        // Função para redefinir o conteúdo do propertyContainer
-        function resetPropertyContainer() {
-            propertyContainer.innerHTML = 'Select the desired property'; // Substitua por seu conteúdo padrão
+        function addUpdateButton(interpretedTree, petriClass) {
+            const updateButton = document.getElementById('update-marking-reachability');
+            updateButton.onclick = () => {
+                const targetMarking = {};
+                const numPlaces = Object.keys(petriClass.places).length;
+                for (let i = 0; i < numPlaces; i++) {
+                    const placeName = `p${i + 1}`;
+                    const inputValue = document.getElementById(`${placeName}-input`).value;
+                    targetMarking[placeName] = parseInt(inputValue);
+                }
+                const markinReachabilityContent = isMarkingReachable(interpretedTree, targetMarking, petriClass);
+                document.getElementById('marking-reachability').textContent = markinReachabilityContent;
+            };
         }
     }
 
@@ -481,46 +518,142 @@ export class Application {
 
         const handlers = {
             "nav-btn-modal": () => {
-                matrixContainer.innerHTML = '';
+                if (!this.editor) return;
                 matrixModal.showModal();
 
-                if (!this.editor)
-                    return;
-                    const netData = this.editor.net.getNetData();
-                    const customFormatNet = ConvertPetriNet(netData);
-                    const places = customFormatNet.places;
-                    const transitions = customFormatNet.transitions;
-                    const petriClass = new PetriClass(places, transitions);
-                    openMatrixModal(petriClass);
-                    getMatrices(petriClass);
-                },
-
-                "matrix-modal-close": () => {
-                    matrixModal.close();
-                    resetPropertyContainer();
-                },
-                "matrix-close": () => {
-                    matrixModal.close();
-                    resetPropertyContainer();
-                },
+                const netData = this.editor.net.getNetData();
+                const customFormatNet = ConvertPetriNet(netData);
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                openMatrixModal(petriClass);
+                getMatrices(petriClass);
+            },
+            "matrix-modal-close": () => {
+                matrixModal.close();
+            },
+            "matrix-close": () => {
+                matrixModal.close();
             }
-            
+        };
 
-            // Adiciona manipuladores de evento aos botões
+        // Adiciona manipuladores de evento aos botões
         for (const [btnId, handler] of Object.entries(handlers)) {
             const btn = document.getElementById(btnId);
-            btn.onclick = handler;
+            if (btn) {
+                btn.onclick = handler;
+            } else {
+                console.warn(`Botão com ID '${btnId}' não encontrado.`);
+            }
         }
 
         function openMatrixModal(petriClass) {
-            
             const matrices = getMatrices(petriClass);
-            document.getElementById("matrix-c").innerText = JSON.stringify(matrices.C, null, 2);
-            document.getElementById("matrix-e").innerText = JSON.stringify(matrices.E, null, 2);
-            document.getElementById("matrix-s").innerText = JSON.stringify(matrices.S, null, 2);
-            document.getElementById("matrix-modal").showModal();
+            setMatrixContent("matrix-c", matrices.C);
+            setMatrixContent("matrix-e", matrices.E);
+            setMatrixContent("matrix-s", matrices.S);
+            matrixModal.showModal();
         }
 
+        function setMatrixContent(elementId, content) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = convertMatrixToHTMLTable(content);
+            } else {
+                console.warn(`Elemento com ID '${elementId}' não encontrado.`);
+            }
+        }
+
+        function convertMatrixToHTMLTable(matrix) {
+            let tableHTML = '<table>';
+            for (let i = 0; i < matrix.length; i++) {
+                tableHTML += '<tr>';
+                for (let j = 0; j < matrix[i].length; j++) {
+                    tableHTML += `<td>${matrix[i][j]}</td>`;
+                }
+                tableHTML += '</tr>';
+            }
+            tableHTML += '</table>';
+            return tableHTML;
+        }
+    }
+
+
+    bindInvariantsButtons() {
+        console.log("bindInvariantsButtons called.");
+    
+        const invariantModal = document.getElementById('invariant-modal');
+        const invariantContainer = document.getElementById('invariant-container');
+    
+        const handlers = {
+            "nav-btn-place": () => {
+                if (!this.editor) {
+                    console.error("Editor not found.");
+                    return;
+                }
+    
+                invariantModal.showModal();
+                console.log("Modal opened.");
+    
+                // Chama a rede de petri desenhada em tela
+                const netData = this.editor.net.getNetData();
+                // Converte a rede de petri para o formato utilizado no render
+                const customFormatNet = ConvertPetriNet(netData);
+                // Define os lugares e transições para chamar as funções de tratamento e renderização da árvore de alcançabilidade
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                const { C, E, S } = getMatrices(petriClass);
+    
+                // Chamada para calcular os invariants
+                const invariants = findPlaceInvariants(C);
+    
+                invariantContainer.innerHTML = ''; // Limpa o conteúdo anterior
+    
+                if (invariants.length === 0) {
+                    invariantContainer.innerHTML = '<p>No invariants found.</p>';
+                    return;
+                }
+    
+                const ul = document.createElement('ul');
+                ul.style.listStyle = 'none'; // Remove os marcadores de lista
+    
+                invariants.forEach((invariant, index) => {
+                    const li = document.createElement('li');
+                    li.style.fontSize = '1.5em'; // Aumenta o tamanho do texto
+                    li.style.marginBottom = '0.5em'; // Adiciona espaçamento entre os itens
+                    li.style.marginRight = '2em'; // Adiciona espaçamento entre os itens
+                    //li.style.textAlign = 'center'; // Centraliza o texto
+                    const span = document.createElement('span');
+                    span.style.position = 'relative'; // Permite posicionar o elemento
+                    span.style.top = '0.5em'; // Move o número para cima
+                    span.style.fontSize = '0.7em'; // Diminui o tamanho do número
+                    span.textContent = `${index + 1}`;
+                    li.innerHTML = `<span style="position: relative; ">Z${span.outerHTML}</span>: [${invariant.join(', ')}]`;
+                    ul.appendChild(li);
+                });
+                invariantContainer.appendChild(ul);
+            },
+            "invariant-modal-close": () => {
+                invariantModal.close();
+                console.log("Modal closed.");
+            },
+            "invariant-close": () => {
+                invariantModal.close();
+                console.log("Modal closed.");
+            },
+        };
+    
+        // Adiciona manipuladores de evento aos botões
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            if (!btn) {
+                console.error(`Button ${btnId} not found.`);
+                continue;
+            }
+            btn.onclick = handler;
+            console.log(`Handler added for ${btnId}.`);
+        }
     }
 
     bindSimulationButtons() {
