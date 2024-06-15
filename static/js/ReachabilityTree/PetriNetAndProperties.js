@@ -359,8 +359,7 @@ function isPetriNetLive(reachabilityTree, net) {
     const numTransitions = net.transitions.length;
 
     if (numPlaces === 0 || numTransitions === 0) {
-        console.log("There is no Petri Net for analysis");
-        return;
+        return "There is no Petri Net for analysis";
     }
 
     // Map para armazenar os nodes por ID
