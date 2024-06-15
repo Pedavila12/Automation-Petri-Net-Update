@@ -79,6 +79,7 @@ export class Application {
         this.bindPropertiesButtons();
         this.BindMatrixButtons();
         this.bindInvariantsButtons();
+        this.bindInvTransitionButton();
         this.setTheme(localStorage.getItem("theme") ?? "light");
     }
     getEditor() {
@@ -259,8 +260,29 @@ export class Application {
                 );
                 const tree = reachabilityTree(petriClass, initialState);
                 const interpretedTree = interpretReachabilityTree(tree);
-                console.log(interpretedTree);
-                renderReachabilityTree(interpretedTree);
+                //console.log(interpretedTree);
+
+                function findInfinityPseudoNode(interpretedTree) {
+                    for (let node of interpretedTree) {
+                        if(node.children[0].transition === "InfinityPseudoNode"){
+                            return "Infinity Tree";
+                        }
+                    }
+                    return false;
+                }
+
+                const infinityTree = findInfinityPseudoNode(interpretedTree);
+
+                if(infinityTree){
+                    treeContainer.innerHTML = '<p>Infinity Tree.</p>';
+                    treeContainer.style.fontSize = '20pt';
+                    treeContainer.style.textAlign = 'center'; 
+                }else{
+                    renderReachabilityTree(interpretedTree);
+                }
+                
+
+                
                 //Exemplo de uso da propriedade de segurança ou binária
                 // isBinaryAndSafe(petriClass);
                 // //Exemplo de uso da propriedade de reversibilidade
@@ -275,12 +297,12 @@ export class Application {
                 // } else {
                 //     console.log("Marcação não alcançável a partir da árvore de alcance.");
                 // }
-                const { C, E, S } = getMatrices(petriClass);
-                const placeInvariants = findPlaceInvariants(C);    
-                console.log("Matriz C:", C);
-                console.log("invariantes de lugar:", placeInvariants);
-                const transitionsInvariants = findTransitionInvariants(C);
-                console.log("invariantes de transição:", transitionsInvariants[0]);
+                //const { C, E, S } = getMatrices(petriClass);
+                //const placeInvariants = findPlaceInvariants(C);    
+                //console.log("Matriz C:", C);
+                //console.log("invariantes de lugar:", placeInvariants);
+                //const transitionsInvariants = findTransitionInvariants(C);
+                //console.log("invariantes de transição:", transitionsInvariants[0]);
                 //exemplo de utilização da função que retorna os invariantes de lugar
                 
                 //const invariants = findPlaceInvariants(C);
@@ -603,36 +625,42 @@ export class Application {
                 const places = customFormatNet.places;
                 const transitions = customFormatNet.transitions;
                 const petriClass = new PetriClass(places, transitions);
-                const { C, E, S } = getMatrices(petriClass);
-    
-                // Chamada para calcular os invariants
-                const invariants = findPlaceInvariants(C);
-    
-                invariantContainer.innerHTML = ''; // Limpa o conteúdo anterior
-    
-                if (invariants.length === 0) {
-                    invariantContainer.innerHTML = '<p>No invariants found.</p>';
+                const {C} = getMatrices(petriClass);
+                
+                if(places.length===0||transitions.length===0){
+                    invariantContainer.innerHTML = '<p>There is no Petri Net for analysis.</p>';
                     return;
+                }else{
+                    // Chamada para calcular os invariants
+                    const invariants = findPlaceInvariants(C);
+        
+                    invariantContainer.innerHTML = ''; // Limpa o conteúdo anterior
+        
+                    if (invariants.length === 0) {
+                        invariantContainer.innerHTML = '<p>No invariants found.</p>';
+                        return;
+                    }
+        
+                    const ul = document.createElement('ul');
+                    ul.style.listStyle = 'none'; // Remove os marcadores de lista
+        
+                    invariants.forEach((invariant, index) => {
+                        const li = document.createElement('li');
+                        li.style.fontSize = '1.5em'; // Aumenta o tamanho do texto
+                        li.style.marginBottom = '0.5em'; // Adiciona espaçamento entre os itens
+                        li.style.marginRight = '2em'; // Adiciona espaçamento entre os itens
+                        //li.style.textAlign = 'center'; // Centraliza o texto
+                        const span = document.createElement('span');
+                        span.style.position = 'relative'; // Permite posicionar o elemento
+                        span.style.top = '0.5em'; // Move o número para cima
+                        span.style.fontSize = '0.7em'; // Diminui o tamanho do número
+                        span.textContent = `${index + 1}`;
+                        li.innerHTML = `<span style="position: relative; ">Z${span.outerHTML}</span>: [${invariant.join(', ')}]`;
+                        ul.appendChild(li);
+                    });
+                    invariantContainer.appendChild(ul);
                 }
-    
-                const ul = document.createElement('ul');
-                ul.style.listStyle = 'none'; // Remove os marcadores de lista
-    
-                invariants.forEach((invariant, index) => {
-                    const li = document.createElement('li');
-                    li.style.fontSize = '1.5em'; // Aumenta o tamanho do texto
-                    li.style.marginBottom = '0.5em'; // Adiciona espaçamento entre os itens
-                    li.style.marginRight = '2em'; // Adiciona espaçamento entre os itens
-                    //li.style.textAlign = 'center'; // Centraliza o texto
-                    const span = document.createElement('span');
-                    span.style.position = 'relative'; // Permite posicionar o elemento
-                    span.style.top = '0.5em'; // Move o número para cima
-                    span.style.fontSize = '0.7em'; // Diminui o tamanho do número
-                    span.textContent = `${index + 1}`;
-                    li.innerHTML = `<span style="position: relative; ">Z${span.outerHTML}</span>: [${invariant.join(', ')}]`;
-                    ul.appendChild(li);
-                });
-                invariantContainer.appendChild(ul);
+                
             },
             "invariant-modal-close": () => {
                 invariantModal.close();
@@ -640,6 +668,76 @@ export class Application {
             },
             "invariant-close": () => {
                 invariantModal.close();
+                console.log("Modal closed.");
+            },
+        };
+    
+        // Adiciona manipuladores de evento aos botões
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            if (!btn) {
+                console.error(`Button ${btnId} not found.`);
+                continue;
+            }
+            btn.onclick = handler;
+            console.log(`Handler added for ${btnId}.`);
+        }
+    }
+
+
+    bindInvTransitionButton() {
+    
+        const invTransitionModal = document.getElementById('invTransition-modal');
+        const invTransitionContainer = document.getElementById('invTransition-container');
+    
+        const handlers = {
+            "nav-btn-transition": () => {
+                if (!this.editor) {
+                    return;
+                }
+    
+                invTransitionModal.showModal();
+                console.log("Modal opened.");
+    
+                // Chama a rede de petri desenhada em tela
+                const netData = this.editor.net.getNetData();
+                // Converte a rede de petri para o formato utilizado no render
+                const customFormatNet = ConvertPetriNet(netData);
+                // Define os lugares e transições para chamar as funções de tratamento e renderização da árvore de alcançabilidade
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                const {C} = getMatrices(petriClass);
+    
+                // Analisa se realmente existe uma rede de petri para executar as funções
+                if(places.length===0||transitions.length===0){
+                    invTransitionContainer.innerHTML = '<p>There is no Petri Net for analysis.</p>';
+                    return;
+                }else{
+                    const transitionInv = findTransitionInvariants(C);
+    
+                    invTransitionContainer.innerHTML = ''; // Limpa o conteúdo anterior
+        
+                    if (transitionInv.length === 0) {
+                        invTransitionContainer.innerHTML = '<p>No invariants found.</p>';
+                        return;
+                    }
+                    
+                    // Adiciona os vetores gráficos dos invariantes na modal
+                    transitionInv.forEach(inv => {
+                        const invRow = document.createElement('p');
+                        invRow.textContent = `[${inv.join(' ')}]`;
+                        invRow.style.textAlign = 'center';
+                        invTransitionContainer.appendChild(invRow);
+                    });
+                }
+            },
+            "invTransition-modal-close": () => {
+                invTransitionModal.close();
+                console.log("Modal closed.");
+            },
+            "invTransition-close": () => {
+                invTransitionModal.close();
                 console.log("Modal closed.");
             },
         };

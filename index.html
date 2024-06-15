@@ -228,6 +228,7 @@
         <button id="nav-btn-gentree">Generate Tree</button>
         <button id="nav-btn-property">Properties</button>
         <button id="nav-btn-modal">Matrices</button>
+
         <div class="dropdown">
             <button class="dropbtn">Invariants
                 <i class="fa fa-caret-down"></i>
@@ -404,6 +405,19 @@
         </div>
     </dialog>
 
+    <!--Geração da invariante de transição-->
+    <dialog id="invTransition-modal" class="modal">
+        <div class="modal-header">
+            <h2>Transition Invariants</h2>
+            <span id="invTransition-modal-close" class="modal-close">&times;</span>
+        </div>
+        <div>
+            <div id="invTransition-container" class="invTransition-container"></div>
+        </div>
+        <div class="modal-footer">
+            <button id="invTransition-close" class="btn btn-secondary">Close</button>
+        </div>
+    </dialog>
 
     <dialog id="inputs-modal" class="modal">
         <template id="input-row">

@@ -289,7 +289,7 @@ function isConservative(treeNodes, net) {
 //Verificar se a rede de petri é reversivel isso através de uma estrutura de repetição que verifica se a rede consegue sempre se reiniciar
 
 function isReversible(net) {
-    console.log("net:", net);
+    //console.log("net:", net);
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
     if (numPlaces === 0 || numTransitions === 0) {
@@ -357,14 +357,16 @@ function isReversible(net) {
 function isPetriNetLive(reachabilityTree, net) {
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
+
     if (numPlaces === 0 || numTransitions === 0) {
-        console.log("A rede de Petri não é binária ou segura.");
-        return "There is no Petri Net for analysis";
+        console.log("There is no Petri Net for analysis");
+        return;
     }
-    // Criar um conjunto para armazenar todos os IDs de nós finais de ramo
+
+    // Map para armazenar os nodes por ID
+    const nodeIdMap = new Map();
     const nodeIdSet = new Set();
 
-    // Função para percorrer a árvore de alcance recursivamente
     function traverseTree(node) {
         // Verificar se o nó é um nó final de ramo
         if (node.children.length === 0) {
@@ -375,18 +377,88 @@ function isPetriNetLive(reachabilityTree, net) {
         }
     }
 
-    // Percorrer a árvore de alcance
     reachabilityTree.forEach(node => traverseTree(node));
 
     // Verificar se há IDs únicos nos nós finais de ramo
     if (nodeIdSet.size === reachabilityTree.length) {
         return "The Petri Net is dead";
     } else {
+        // Array para armazenar os estados dos filhos dos nós duplicados
+        const duplicateNodeChildrenStates = [];
+
+        // Função para percorrer a árvore de alcance recursivamente e encontrar duplicados
+        function traverseTree(node) {
+            const nodeId = node.id;
+
+            if (!nodeIdMap.has(nodeId)) {
+                nodeIdMap.set(nodeId, []);
+            }
+
+            // Verificar se o node já existe no mapa
+            const nodesWithSameId = nodeIdMap.get(nodeId);
+            const isDuplicate = nodesWithSameId.some(existingNode => areNodesEqual(existingNode, node));
+
+            if (isDuplicate) {
+                // Adicionar os estados dos filhos ao array de estados
+                //console.log(`Node duplicado encontrado: ${nodeId}`);
+                node.children.forEach(child => {
+                    duplicateNodeChildrenStates.push(child.state);
+                });
+            }
+
+            // Adicionar o node ao mapa
+            nodeIdMap.get(nodeId).push(node);
+
+            // Recursivamente percorrer os filhos do nó
+            if (node.children && node.children.length > 0) {
+                node.children.forEach(child => traverseTree(child));
+            }
+        }
+
+        // Função para verificar igualdade entre dois nodes
+        function areNodesEqual(node1, node2) {
+            // Comparar o estado dos nodes
+            if (JSON.stringify(node1.state) !== JSON.stringify(node2.state)) {
+                return false;
+            }
+
+            // Comparar os filhos dos nodes recursivamente
+            if (node1.children.length !== node2.children.length) {
+                return false;
+            }
+
+            // Verificar se os filhos são iguais
+            for (let i = 0; i < node1.children.length; i++) {
+                if (!areNodesEqual(node1.children[i], node2.children[i])) {
+                    return false;
+                }
+            }
+
+            return true;
+        }
+
+        // Percorrer a árvore de alcançabilidade
+        reachabilityTree.forEach(node => traverseTree(node));
+
+        // Console log para validação
+        let defineDead = false;
+        for (let i = 0; i < duplicateNodeChildrenStates.length; i++) {
+            // Verifica se o valor atual é igual à variável alvo
+            if (duplicateNodeChildrenStates[i] === 'Deadlock') {
+                defineDead = true;
+                break;  // Se encontrar, podemos parar o loop
+            }
+        }
+        if(defineDead){
+            return "The Petri Net is dead";
+        }
+
         return "The Petri Net is alive";
+    
     }
+
+    
 }
-
-
 
 //Recebe a rede petri da classe PetriClass e retorna as matrizes E,S e C, não está sendo utilizada ainda
 function getMatrices(net) {
@@ -467,6 +539,7 @@ function isMarkingReachable(nodes, targetMarking, net) {
 
 
 function findPlaceInvariants(C) {
+    
     // Transposta de C
     const C_T = math.transpose(C);
 
