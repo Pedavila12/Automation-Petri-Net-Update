@@ -394,7 +394,7 @@ export class Application {
             const safetyContent = isBinaryAndSafe(petriClass);
             const vivacityContent = isPetriNetLive(interpretedTree, petriClass);
             const conservationContent = isConservative(interpretedTree, petriClass);
-            const reversibilityContent = isReversible(petriClass);
+            const reversibilityContent = isReversible(interpretedTree, petriClass);
             const targetMarking = { 'p1': 0 };
             const limitationContent = petriClass.limitOfPetriNet();
 

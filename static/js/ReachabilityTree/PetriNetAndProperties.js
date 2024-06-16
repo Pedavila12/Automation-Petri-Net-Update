@@ -288,70 +288,39 @@ function isConservative(treeNodes, net) {
 
 //Verificar se a rede de petri é reversivel isso através de uma estrutura de repetição que verifica se a rede consegue sempre se reiniciar
 
-function isReversible(net) {
-    //console.log("net:", net);
+function isReversible(interpretedTree, net) {
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
     if (numPlaces === 0 || numTransitions === 0) {
-        console.log("A rede de Petri não é binária ou segura.");
         return "There is no Petri Net for analysis";
     }
 
-    const initialState = Object.fromEntries(
-        Object.entries(net.places).map(([p, place]) => [p, place.marking])
-    );
-    const allMarkings = [initialState];
-    const visitedMarkings = new Set();
-
-    while (allMarkings.length > 0) {
-        const currentMarking = allMarkings.pop();
-
-        if (visitedMarkings.has(JSON.stringify(currentMarking))) {
-            continue;
-        }
-
-        visitedMarkings.add(JSON.stringify(currentMarking));
-
-        const fireableTransitions = net.transitions.filter((transition) =>
-            Object.keys(transition.inputPlaces).every(
-                (place) =>
-                    currentMarking[place] >= transition.inputPlaces[place]
-            )
-        );
-
-        for (const transition of fireableTransitions) {
-            const netCopy = new PetriClass(
-                Object.values(net.places).map(
-                    (place) => new Place(place.name, currentMarking[place])
-                ),
-                net.transitions
-            );
-            netCopy.fireTransition(transition);
-            const newMarking = Object.fromEntries(
-                Object.entries(netCopy.places).map(([p, place]) => [
-                    p,
-                    place.marking,
-                ])
-            );
-
-            // Se o novo estado não foi visitado, ou é o estado inicial, adicione-o à lista
-            if (
-                !visitedMarkings.has(JSON.stringify(newMarking)) ||
-                JSON.stringify(newMarking) === JSON.stringify(initialState)
-            ) {
-                allMarkings.push(newMarking);
-            }
-        }
+     // Identifica o nó inicial a partir do primeiro nó da árvore
+     const initialNodeId = interpretedTree[0].id;
+     let initialNodeCount = 0;
+ 
+     function traverseTree(node) {
+         if (node.id === initialNodeId) {
+             initialNodeCount++;
+         }
+         if (node.children) {
+             for (const child of node.children) {
+                 traverseTree(child);
+             }
+         }
+     }
+ 
+     // Percorre cada raiz na lista de árvores
+     for (const root of interpretedTree) {
+         traverseTree(root);
+     }
+ 
+     // Verifica se o nó inicial apareceu mais de uma vez
+     if (initialNodeCount > 1) {
+         return "The Petri Net is reversible";
+     } else {
+         return "The Petri Net is not reversible";
     }
-
-
-    if (!isReversible) {
-        console.log("A rede de Petri não é reversível.");
-        return "The Petri Net is not reversible";
-    }
-
-    console.log("A rede de Petri é reversível.");
-    return "The Petri Net is reversible";
 }
 
 function isPetriNetLive(reachabilityTree, net) {
