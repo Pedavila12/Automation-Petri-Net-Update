@@ -10,7 +10,6 @@ import ToolBar from "./Components/ToolBar.js";
 import { delay } from "./utils/utils.js";
 import { SimulationError } from "./LogicalNet.js";
 import { ConvertPetriNet } from "./ReachabilityTree/ConvertPetriNet.js";
-//import { PetriAndProperties } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { PetriClass } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { reachabilityTree } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { interpretReachabilityTree } from "./ReachabilityTree/PetriNetAndProperties.js";
@@ -21,10 +20,9 @@ import { isPetriNetLive } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { getMatrices } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { findPlaceInvariants } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { findTransitionInvariants } from "./ReachabilityTree/PetriNetAndProperties.js";    
-//import { findPlaceInvariants } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { isMarkingReachable } from "./ReachabilityTree/PetriNetAndProperties.js";
 import { renderReachabilityTree } from "./ReachabilityTree//RenderReachabilityTree.js"
-//import { teste } from "./Teste2.js";
+
 const FILE_PICKER_OPTIONS = {
     types: [{
         description: 'Automation Petri Net',
@@ -235,7 +233,8 @@ export class Application {
             btn.onclick = handler;
         }
     }
-    //Botão para abrir o modal
+
+    //Botão para abrir o modal que gera a árvore de alcansabilidade
     bindGenTreeButtons() {
         const genTreeModal = document
             .getElementById('gentree-modal');
@@ -244,13 +243,17 @@ export class Application {
             "nav-btn-gentree": () => {
                 if (!this.editor)
                     return;
+
                 //Limpa o conteudo do modal para gerar um container novo
                 treeContainer.innerHTML = '';
                 genTreeModal.showModal();
+
                 //Chama a rede de petri desenhada em tela
                 const netData = this.editor.net.getNetData();
+
                 //Converte a rede de petri para o formato utilizando no render
                 const customFormatNet = ConvertPetriNet(netData);
+
                 //Definir os lugares e transições para chamar as funções de tratamento e renderização da arvore de alcansabilidade
                 const places = customFormatNet.places;
                 const transitions = customFormatNet.transitions;
@@ -260,7 +263,6 @@ export class Application {
                 );
                 const tree = reachabilityTree(petriClass, initialState);
                 const interpretedTree = interpretReachabilityTree(tree);
-                //console.log(interpretedTree);
 
                 function findInfinityPseudoNode(interpretedTree) {
                     for (let node of interpretedTree) {
@@ -280,42 +282,6 @@ export class Application {
                 }else{
                     renderReachabilityTree(interpretedTree);
                 }
-                
-
-                
-                //Exemplo de uso da propriedade de segurança ou binária
-                // isBinaryAndSafe(petriClass);
-                // //Exemplo de uso da propriedade de reversibilidade
-                // isReversible(petriClass);
-                // //Exemplo de uso da propriedade de limitação
-                // petriClass.limitOfPetriNet();
-                // //Exemplo de uso da propriedade de alcançabilidade
-                // const targetMarking = { 'p1': 0, 'p2': 0, 'p3': 0, 'p4': 1, 'p5': 1, 'p6': 1 };
-                // const isReachable = isMarkingReachable(interpretedTree, targetMarking);
-                // if (isReachable) {
-                //     console.log("A Marcação é alçavel.");
-                // } else {
-                //     console.log("Marcação não alcançável a partir da árvore de alcance.");
-                // }
-                //const { C, E, S } = getMatrices(petriClass);
-                //const placeInvariants = findPlaceInvariants(C);    
-                //console.log("Matriz C:", C);
-                //console.log("invariantes de lugar:", placeInvariants);
-                //const transitionsInvariants = findTransitionInvariants(C);
-                //console.log("invariantes de transição:", transitionsInvariants[0]);
-                //exemplo de utilização da função que retorna os invariantes de lugar
-                
-                //const invariants = findPlaceInvariants(C);
-                //console.log("Invariantes de Lugar:", invariants);
-                /*console.log('Matriz C:');
-                console.log(C);
-                console.log('Matriz E:');
-                console.log(E);
-                console.log('Matriz S:');
-                console.log(S);
-                
-                const isReachable = isMarkingReachable(petriClass, targetMarking);
-                console.log(`A marcação é alcançável: ${isReachable}`);*/
 
             }, "gentree-modal-close": () => {
                 genTreeModal.close();
@@ -330,10 +296,7 @@ export class Application {
         }
     }
 
-
-
-
-
+    //Botão que abre a modal de propriedades 
     bindPropertiesButtons() {
         const propriertyModal = document.getElementById('property-modal');
         const propertyContainer = document.getElementById('property-container');
@@ -359,6 +322,7 @@ export class Application {
 
                 // Atualizando o conteúdo da modal com todas as propriedades
                 updateAllProperties(petriClass, interpretedTree);
+
                 // Definindo o conteúdo inicial para Marcação Reachability
                 if (places.length === 0 || transitions.length === 0) {
                     const initialMarkingReachabilityContent = '	There is no Petri Net for analysis';
@@ -397,8 +361,6 @@ export class Application {
             const reversibilityContent = isReversible(interpretedTree, petriClass);
             const targetMarking = { 'p1': 0 };
             const limitationContent = petriClass.limitOfPetriNet();
-
-        
 
             let tableContent = `
                 <style>
@@ -497,6 +459,7 @@ export class Application {
             document.getElementById('property-text').innerHTML = tableContent;
         }
 
+        //Valores de entrada para o calculo de alcançabilidade 
         function createInputForPlaces(places) {
             const inputContainer = document.getElementById('input-container');
 
@@ -518,6 +481,7 @@ export class Application {
             }
         }
 
+        //Botão Update da função de alcançabilidade
         function addUpdateButton(interpretedTree, petriClass) {
             const updateButton = document.getElementById('update-marking-reachability');
             updateButton.onclick = () => {
@@ -534,6 +498,7 @@ export class Application {
         }
     }
 
+    //Botão que abre a tela modal das matrizes E,S e C
     BindMatrixButtons() {
         const matrixModal = document.getElementById('matrix-modal');
         const matrixContainer = document.getElementById('matrix-container');
@@ -600,10 +565,8 @@ export class Application {
         }
     }
 
-
-    bindInvariantsButtons() {
-        console.log("bindInvariantsButtons called.");
-    
+    //Botão que abre a tela modal dos invariantes de lugar 
+    bindInvariantsButtons() { 
         const invariantModal = document.getElementById('invariant-modal');
         const invariantContainer = document.getElementById('invariant-container');
     
@@ -615,12 +578,13 @@ export class Application {
                 }
     
                 invariantModal.showModal();
-                console.log("Modal opened.");
     
                 // Chama a rede de petri desenhada em tela
                 const netData = this.editor.net.getNetData();
+
                 // Converte a rede de petri para o formato utilizado no render
                 const customFormatNet = ConvertPetriNet(netData);
+
                 // Define os lugares e transições para chamar as funções de tratamento e renderização da árvore de alcançabilidade
                 const places = customFormatNet.places;
                 const transitions = customFormatNet.transitions;
@@ -631,29 +595,27 @@ export class Application {
                     invariantContainer.innerHTML = '<p>There is no Petri Net for analysis.</p>';
                     return;
                 }else{
-                    // Chamada para calcular os invariants
-                    const invariants = findPlaceInvariants(C);
-        
-                    invariantContainer.innerHTML = ''; // Limpa o conteúdo anterior
-        
+                        // Chamada para calcular os invariants
+                        const invariants = findPlaceInvariants(C);
+                        invariantContainer.innerHTML = '';
                     if (invariants.length === 0) {
                         invariantContainer.innerHTML = '<p>No invariants found.</p>';
                         return;
                     }
         
                     const ul = document.createElement('ul');
-                    ul.style.listStyle = 'none'; // Remove os marcadores de lista
+                    // Remove os marcadores de lista
+                    ul.style.listStyle = 'none'; 
         
                     invariants.forEach((invariant, index) => {
                         const li = document.createElement('li');
-                        li.style.fontSize = '1.5em'; // Aumenta o tamanho do texto
-                        li.style.marginBottom = '0.5em'; // Adiciona espaçamento entre os itens
-                        li.style.marginRight = '2em'; // Adiciona espaçamento entre os itens
-                        //li.style.textAlign = 'center'; // Centraliza o texto
+                        li.style.fontSize = '1.5em'; 
+                        li.style.marginBottom = '0.5em'; 
+                        li.style.marginRight = '2em';
                         const span = document.createElement('span');
-                        span.style.position = 'relative'; // Permite posicionar o elemento
-                        span.style.top = '0.5em'; // Move o número para cima
-                        span.style.fontSize = '0.7em'; // Diminui o tamanho do número
+                        span.style.position = 'relative';
+                        span.style.top = '0.5em'; 
+                        span.style.fontSize = '0.7em'; 
                         span.textContent = `${index + 1}`;
                         li.innerHTML = `<span style="position: relative; ">Z${span.outerHTML}</span>: [${invariant.join(', ')}]`;
                         ul.appendChild(li);
@@ -664,15 +626,12 @@ export class Application {
             },
             "invariant-modal-close": () => {
                 invariantModal.close();
-                console.log("Modal closed.");
             },
             "invariant-close": () => {
                 invariantModal.close();
-                console.log("Modal closed.");
             },
         };
     
-        // Adiciona manipuladores de evento aos botões
         for (const [btnId, handler] of Object.entries(handlers)) {
             const btn = document.getElementById(btnId);
             if (!btn) {
@@ -680,13 +639,11 @@ export class Application {
                 continue;
             }
             btn.onclick = handler;
-            console.log(`Handler added for ${btnId}.`);
         }
     }
 
-
+    //Botão que abre a tela modal dos invariantes de transição
     bindInvTransitionButton() {
-    
         const invTransitionModal = document.getElementById('invTransition-modal');
         const invTransitionContainer = document.getElementById('invTransition-container');
     
@@ -697,12 +654,13 @@ export class Application {
                 }
     
                 invTransitionModal.showModal();
-                console.log("Modal opened.");
     
                 // Chama a rede de petri desenhada em tela
                 const netData = this.editor.net.getNetData();
+
                 // Converte a rede de petri para o formato utilizado no render
                 const customFormatNet = ConvertPetriNet(netData);
+
                 // Define os lugares e transições para chamar as funções de tratamento e renderização da árvore de alcançabilidade
                 const places = customFormatNet.places;
                 const transitions = customFormatNet.transitions;
@@ -734,15 +692,12 @@ export class Application {
             },
             "invTransition-modal-close": () => {
                 invTransitionModal.close();
-                console.log("Modal closed.");
             },
             "invTransition-close": () => {
                 invTransitionModal.close();
-                console.log("Modal closed.");
             },
         };
     
-        // Adiciona manipuladores de evento aos botões
         for (const [btnId, handler] of Object.entries(handlers)) {
             const btn = document.getElementById(btnId);
             if (!btn) {
@@ -750,7 +705,6 @@ export class Application {
                 continue;
             }
             btn.onclick = handler;
-            console.log(`Handler added for ${btnId}.`);
         }
     }
 
@@ -804,7 +758,6 @@ export class Application {
         let movingScreenOffset;
         const handlers = {
             mousedown: (evt) => {
-                console.log(evt);
                 if (!this.editor)
                     return;
                 if (evt.ctrlKey || evt.button === 2) {
@@ -863,7 +816,6 @@ export class Application {
         document.body.addEventListener('keydown', (evt) => {
             if (!this.editor)
                 return;
-            console.log();
             if (evt.target.tagName !== "BODY")
                 return;
             if (this.simulator)

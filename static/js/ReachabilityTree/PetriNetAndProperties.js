@@ -1,4 +1,3 @@
-
 class Place {
     constructor(name, marking = 0, isInhibitor = false) {
         this.name = name;
@@ -36,7 +35,6 @@ class PetriClass {
             });
         } catch (error) {
             console.error("Arvore Infinita", error.message);
-            //console.log("Arvore Infinita");
         }
     }
 
@@ -58,7 +56,6 @@ class PetriClass {
         const fireableTransitions = this.fireableTransitions();
 
         if (fireableTransitions.length === 0) {
-            console.log("A rede de Petri é limitada em k =", maxRequiredTokens);
             return "There is no Petri Net for analysis.";
         }
 
@@ -73,8 +70,6 @@ class PetriClass {
             maxRequiredTokens,
             this.getMaxRequiredTokens()
         );
-
-        console.log("A rede é limitada a K = ", maxRequiredTokens);
 
         return "This Petri Net is limited in k = " + maxRequiredTokens;
     }
@@ -157,7 +152,6 @@ function interpretReachabilityTree(treeData) {
 
             if (!this.stateToIdMap.has(stateString)) {
                 const markings = state && typeof state === 'object' ? Object.values(state) : [];
-                //console.log(markings)
                 const id = `M${this.counter++} {${markings}}`;
                 this.stateToIdMap.set(stateString, id);
             }
@@ -225,14 +219,11 @@ function interpretReachabilityTree(treeData) {
     return nodes;
 }
 
-
-
 //Função que recebe a rede de petri pela classe instanciada petriClass e retorna se a rede é segura ou binária
 function isBinaryAndSafe(net) {
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
     if (numPlaces === 0 || numTransitions === 0) {
-        console.log("A rede de Petri não é binária ou segura.");
         return "There is no Petri Net for analysis";
     }
     // Verifica se a rede de Petri é binária e se todas as marcações são 0 ou 1
@@ -247,11 +238,9 @@ function isBinaryAndSafe(net) {
     });
 
     if (!isBinaryAndSafe) {
-        console.log("A rede de Petri não é binária ou segura.");
         return "The Petri Net is not binary or safe";
     }
 
-    console.log("A rede de Petri é binária e segura.");
     return "The Petri Net is binary and safe"
 }
 
@@ -260,7 +249,6 @@ function isConservative(treeNodes, net) {
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
     if (numPlaces === 0 || numTransitions === 0) {
-        console.log("A rede de Petri não é binária ou segura.");
         return "There is no Petri Net for analysis";
     }
     // Função para calcular a somatória dos markings de um estado
@@ -278,11 +266,9 @@ function isConservative(treeNodes, net) {
     const result = markingsSums.every((sum) => sum === referenceSum);
 
     if (!result) {
-        console.log("A rede de Petri não é conservativa.");
         return "The Petri Net is not conservative"
     }
 
-    console.log("A rede de Petri é conservativa.")
     return "The Petri Net is conservative";
 }
 
@@ -368,7 +354,6 @@ function isPetriNetLive(reachabilityTree, net) {
 
             if (isDuplicate) {
                 // Adicionar os estados dos filhos ao array de estados
-                //console.log(`Node duplicado encontrado: ${nodeId}`);
                 node.children.forEach(child => {
                     duplicateNodeChildrenStates.push(child.state);
                 });
@@ -471,7 +456,6 @@ function isMarkingReachable(nodes, targetMarking, net) {
     const numPlaces = Object.keys(net.places).length;
     const numTransitions = net.transitions.length;
     if (numPlaces === 0 || numTransitions === 0) {
-        console.log("A rede de Petri não é binária ou segura.");
         return "There is no Petri Net for analysis";
     }
 
@@ -549,7 +533,7 @@ function findPlaceInvariants(C) {
 
 
 function findTransitionInvariants(C) {
-        // Transposta de C
+    // Transposta de C
     const C_T = math.transpose(C);
 
     // Encontrar vetores fs de soluções
