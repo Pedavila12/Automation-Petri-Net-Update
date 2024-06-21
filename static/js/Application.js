@@ -9,13 +9,27 @@ import { Simulator } from "./Components/Simulator.js";
 import ToolBar from "./Components/ToolBar.js";
 import { delay } from "./utils/utils.js";
 import { SimulationError } from "./LogicalNet.js";
+import { ConvertPetriNet } from "./ReachabilityTree/ConvertPetriNet.js";
+import { PetriClass } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { reachabilityTree } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { interpretReachabilityTree } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { isBinaryAndSafe } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { isConservative } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { isReversible } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { isPetriNetLive } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { getMatrices } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { findPlaceInvariants } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { findTransitionInvariants } from "./ReachabilityTree/PetriNetAndProperties.js";    
+import { isMarkingReachable } from "./ReachabilityTree/PetriNetAndProperties.js";
+import { renderReachabilityTree } from "./ReachabilityTree//RenderReachabilityTree.js"
+
 const FILE_PICKER_OPTIONS = {
     types: [{
-            description: 'Automation Petri Net',
-            accept: {
-                'text/plain': ['.txt']
-            }
-        }],
+        description: 'Automation Petri Net',
+        accept: {
+            'text/plain': ['.txt']
+        }
+    }],
     excludeAcceptAllOption: true,
     multiple: false
 };
@@ -59,6 +73,11 @@ export class Application {
         this.bindSimulationButtons();
         this.bindGenCodeButtons();
         this.addEditorEventListeners();
+        this.bindGenTreeButtons();
+        this.bindPropertiesButtons();
+        this.BindMatrixButtons();
+        this.bindInvariantsButtons();
+        this.bindInvTransitionButton();
         this.setTheme(localStorage.getItem("theme") ?? "light");
     }
     getEditor() {
@@ -214,6 +233,481 @@ export class Application {
             btn.onclick = handler;
         }
     }
+
+    //Botão para abrir o modal que gera a árvore de alcansabilidade
+    bindGenTreeButtons() {
+        const genTreeModal = document
+            .getElementById('gentree-modal');
+        const treeContainer = document.getElementById('tree-container');
+        const handlers = {
+            "nav-btn-gentree": () => {
+                if (!this.editor)
+                    return;
+
+                //Limpa o conteudo do modal para gerar um container novo
+                treeContainer.innerHTML = '';
+                genTreeModal.showModal();
+
+                //Chama a rede de petri desenhada em tela
+                const netData = this.editor.net.getNetData();
+
+                //Converte a rede de petri para o formato utilizando no render
+                const customFormatNet = ConvertPetriNet(netData);
+
+                //Definir os lugares e transições para chamar as funções de tratamento e renderização da arvore de alcansabilidade
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                const initialState = Object.fromEntries(
+                    places.map((place) => [place.name, place.marking])
+                );
+                const tree = reachabilityTree(petriClass, initialState);
+                const interpretedTree = interpretReachabilityTree(tree);
+
+                function findInfinityPseudoNode(interpretedTree) {
+                    for (let node of interpretedTree) {
+                        if(node.children[0].transition === "InfinityPseudoNode"){
+                            return "Infinity Tree";
+                        }
+                    }
+                    return false;
+                }
+
+                const infinityTree = findInfinityPseudoNode(interpretedTree);
+
+                if(infinityTree){
+                    treeContainer.innerHTML = '<p>Infinity Tree.</p>';
+                    treeContainer.style.fontSize = '20pt';
+                    treeContainer.style.textAlign = 'center'; 
+                }else{
+                    renderReachabilityTree(interpretedTree);
+                }
+
+            }, "gentree-modal-close": () => {
+                genTreeModal.close();
+            },
+            "gentree-close": () => {
+                genTreeModal.close();
+            },
+        };
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            btn.onclick = handler;
+        }
+    }
+
+    //Botão que abre a modal de propriedades 
+    bindPropertiesButtons() {
+        const propriertyModal = document.getElementById('property-modal');
+        const propertyContainer = document.getElementById('property-container');
+
+        const handlers = {
+            "nav-btn-property": () => {
+                if (!this.editor)
+                    return;
+                propertyContainer.innerHTML = '';
+                propriertyModal.showModal();
+
+                const netData = this.editor.net.getNetData();
+                const customFormatNet = ConvertPetriNet(netData);
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                const initialState = Object.fromEntries(
+                    places.map((place) => [place.name, place.marking])
+                );
+                const tree = reachabilityTree(petriClass, initialState);
+                const interpretedTree = interpretReachabilityTree(tree);
+                renderReachabilityTree(interpretedTree);
+
+                // Atualizando o conteúdo da modal com todas as propriedades
+                updateAllProperties(petriClass, interpretedTree);
+
+                // Definindo o conteúdo inicial para Marcação Reachability
+                if (places.length === 0 || transitions.length === 0) {
+                    const initialMarkingReachabilityContent = '	There is no Petri Net for analysis';
+                    document.getElementById('marking-reachability').textContent = initialMarkingReachabilityContent;
+                }else{
+                    const initialMarkingReachabilityContent = 'Fill in the appointments and see if it is reachable';
+                    document.getElementById('marking-reachability').textContent = initialMarkingReachabilityContent;
+                }
+
+                // Criar inputs para cada lugar
+                createInputForPlaces(places);
+
+                // Adicionar botão de atualização
+                addUpdateButton(interpretedTree, petriClass);
+            },
+            "property-modal-close": () => {
+                propriertyModal.close();
+            },
+            "property-close": () => {
+                propriertyModal.close();
+            },
+        };
+
+        // Adiciona manipuladores de evento aos botões
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            btn.onclick = handler;
+        }
+
+        // Função para atualizar o conteúdo na modal com todas as propriedades em uma tabela
+        function updateAllProperties(petriClass, interpretedTree) {
+            const numPlaces = Object.keys(petriClass.places).length;
+            const safetyContent = isBinaryAndSafe(petriClass);
+            const vivacityContent = isPetriNetLive(interpretedTree, petriClass);
+            const conservationContent = isConservative(interpretedTree, petriClass);
+            const reversibilityContent = isReversible(interpretedTree, petriClass);
+            const targetMarking = { 'p1': 0 };
+            const limitationContent = petriClass.limitOfPetriNet();
+
+            let tableContent = `
+                <style>
+                    .property-table {
+                        width: 100%;
+                        border-collapse: collapse;
+                    }
+                    .property-table th, .property-table td {
+                        border: 1px solid black;
+                        padding: 8px;
+                        text-align: left;
+                    }
+                    .property-table th {
+                        background-color: #f2f2f2;
+                    }
+                    .property-table td {
+                        background-color: #fff;
+                    }
+                    .property-table tr {
+                        height: 40px;
+                    }
+                    .input-container {
+                        display: flex;
+                        flex-wrap: wrap;
+                        gap: 10px;
+                        align-items: center;
+                        justify-content: center;
+                        margin: 20px 0;
+                    }
+                    .input-container label {
+                        font-family: Arial, sans-serif;
+                        font-size: 14px;
+                        font-weight: bold;
+                    }
+                    .input-field {
+                        width: 80px;
+                        padding: 6px;
+                        border: 1px solid #ccc;
+                        border-radius: 4px;
+                    }
+                    .update-button {
+                        padding: 8px 16px;
+                        background-color: #0056b3;
+                        color: white;
+                        border: none;
+                        border-radius: 20px;
+                        cursor: pointer;
+                        font-family: Arial, sans-serif;
+                        font-size: 14px;
+                        font-weight: bold;
+                        transition: background-color 0.3s;
+                    }
+                    .update-button:hover {
+                        background-color: #007bff;
+                        0056b3
+                    }
+                </style>
+                <table class="property-table">
+                    <thead>
+                        <tr>
+                            <th>Properties</th>
+                            <th>Result</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>Safety and Binary</td>
+                            <td>${safetyContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Vivacity</td>
+                            <td>${vivacityContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Conservation</td>
+                            <td>${conservationContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Reversibility</td>
+                            <td>${reversibilityContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Limitation</td>
+                            <td>${limitationContent}</td>
+                        </tr>
+                        <tr>
+                            <td>Marking Reachability</td>
+                            <td id="marking-reachability"></td>
+                        </tr>
+                    </tbody>
+                </table>
+                <div class="input-container" id="input-container"></div>
+                <button class="update-button" id="update-marking-reachability">Update Marking Reachability</button>
+            `;
+
+            document.getElementById('property-text').innerHTML = tableContent;
+        }
+
+        //Valores de entrada para o calculo de alcançabilidade 
+        function createInputForPlaces(places) {
+            const inputContainer = document.getElementById('input-container');
+
+            for (const place of places) {
+                const placeName = place.name;
+                const inputContainerItem = document.createElement('div');
+                inputContainerItem.classList.add('input-container-item');
+                inputContainer.appendChild(inputContainerItem);
+                const inputLabel = document.createElement('label');
+                inputLabel.textContent = `${placeName}: `;
+                inputLabel.classList.add('input-label');
+                inputContainerItem.appendChild(inputLabel);
+                const input = document.createElement('input');
+                input.type = 'number';
+                input.id = `${placeName}-input`;
+                input.value = 0; // Definindo o valor inicial como 0
+                input.classList.add('input-field');
+                inputContainerItem.appendChild(input);
+            }
+        }
+
+        //Botão Update da função de alcançabilidade
+        function addUpdateButton(interpretedTree, petriClass) {
+            const updateButton = document.getElementById('update-marking-reachability');
+            updateButton.onclick = () => {
+                const targetMarking = {};
+                const numPlaces = Object.keys(petriClass.places).length;
+                for (let i = 0; i < numPlaces; i++) {
+                    const placeName = `p${i + 1}`;
+                    const inputValue = document.getElementById(`${placeName}-input`).value;
+                    targetMarking[placeName] = parseInt(inputValue);
+                }
+                const markinReachabilityContent = isMarkingReachable(interpretedTree, targetMarking, petriClass);
+                document.getElementById('marking-reachability').textContent = markinReachabilityContent;
+            };
+        }
+    }
+
+    //Botão que abre a tela modal das matrizes E,S e C
+    BindMatrixButtons() {
+        const matrixModal = document.getElementById('matrix-modal');
+        const matrixContainer = document.getElementById('matrix-container');
+
+        const handlers = {
+            "nav-btn-modal": () => {
+                if (!this.editor) return;
+                matrixModal.showModal();
+
+                const netData = this.editor.net.getNetData();
+                const customFormatNet = ConvertPetriNet(netData);
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                openMatrixModal(petriClass);
+                getMatrices(petriClass);
+            },
+            "matrix-modal-close": () => {
+                matrixModal.close();
+            },
+            "matrix-close": () => {
+                matrixModal.close();
+            }
+        };
+
+        // Adiciona manipuladores de evento aos botões
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            if (btn) {
+                btn.onclick = handler;
+            } else {
+                console.warn(`Botão com ID '${btnId}' não encontrado.`);
+            }
+        }
+
+        function openMatrixModal(petriClass) {
+            const matrices = getMatrices(petriClass);
+            setMatrixContent("matrix-c", matrices.C);
+            setMatrixContent("matrix-e", matrices.E);
+            setMatrixContent("matrix-s", matrices.S);
+            matrixModal.showModal();
+        }
+
+        function setMatrixContent(elementId, content) {
+            const element = document.getElementById(elementId);
+            if (element) {
+                element.innerHTML = convertMatrixToHTMLTable(content);
+            } else {
+                console.warn(`Elemento com ID '${elementId}' não encontrado.`);
+            }
+        }
+
+        function convertMatrixToHTMLTable(matrix) {
+            let tableHTML = '<table>';
+            for (let i = 0; i < matrix.length; i++) {
+                tableHTML += '<tr>';
+                for (let j = 0; j < matrix[i].length; j++) {
+                    tableHTML += `<td>${matrix[i][j]}</td>`;
+                }
+                tableHTML += '</tr>';
+            }
+            tableHTML += '</table>';
+            return tableHTML;
+        }
+    }
+
+    //Botão que abre a tela modal dos invariantes de lugar 
+    bindInvariantsButtons() { 
+        const invariantModal = document.getElementById('invariant-modal');
+        const invariantContainer = document.getElementById('invariant-container');
+    
+        const handlers = {
+            "nav-btn-place": () => {
+                if (!this.editor) {
+                    console.error("Editor not found.");
+                    return;
+                }
+    
+                invariantModal.showModal();
+    
+                // Chama a rede de petri desenhada em tela
+                const netData = this.editor.net.getNetData();
+
+                // Converte a rede de petri para o formato utilizado no render
+                const customFormatNet = ConvertPetriNet(netData);
+
+                // Define os lugares e transições para chamar as funções de tratamento e renderização da árvore de alcançabilidade
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                const {C} = getMatrices(petriClass);
+                
+                if(places.length===0||transitions.length===0){
+                    invariantContainer.innerHTML = '<p>There is no Petri Net for analysis.</p>';
+                    return;
+                }else{
+                        // Chamada para calcular os invariants
+                        const invariants = findPlaceInvariants(C);
+                        invariantContainer.innerHTML = '';
+                    if (invariants.length === 0) {
+                        invariantContainer.innerHTML = '<p>No invariants found.</p>';
+                        return;
+                    }
+        
+                    const ul = document.createElement('ul');
+                    // Remove os marcadores de lista
+                    ul.style.listStyle = 'none'; 
+        
+                    invariants.forEach((invariant, index) => {
+                        const li = document.createElement('li');
+                        li.style.fontSize = '1.5em'; 
+                        li.style.marginBottom = '0.5em'; 
+                        li.style.marginRight = '2em';
+                        const span = document.createElement('span');
+                        span.style.position = 'relative';
+                        span.style.top = '0.5em'; 
+                        span.style.fontSize = '0.7em'; 
+                        span.textContent = `${index + 1}`;
+                        li.innerHTML = `<span style="position: relative; ">Z${span.outerHTML}</span>: [${invariant.join(', ')}]`;
+                        ul.appendChild(li);
+                    });
+                    invariantContainer.appendChild(ul);
+                }
+                
+            },
+            "invariant-modal-close": () => {
+                invariantModal.close();
+            },
+            "invariant-close": () => {
+                invariantModal.close();
+            },
+        };
+    
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            if (!btn) {
+                console.error(`Button ${btnId} not found.`);
+                continue;
+            }
+            btn.onclick = handler;
+        }
+    }
+
+    //Botão que abre a tela modal dos invariantes de transição
+    bindInvTransitionButton() {
+        const invTransitionModal = document.getElementById('invTransition-modal');
+        const invTransitionContainer = document.getElementById('invTransition-container');
+    
+        const handlers = {
+            "nav-btn-transition": () => {
+                if (!this.editor) {
+                    return;
+                }
+    
+                invTransitionModal.showModal();
+    
+                // Chama a rede de petri desenhada em tela
+                const netData = this.editor.net.getNetData();
+
+                // Converte a rede de petri para o formato utilizado no render
+                const customFormatNet = ConvertPetriNet(netData);
+
+                // Define os lugares e transições para chamar as funções de tratamento e renderização da árvore de alcançabilidade
+                const places = customFormatNet.places;
+                const transitions = customFormatNet.transitions;
+                const petriClass = new PetriClass(places, transitions);
+                const {C} = getMatrices(petriClass);
+    
+                // Analisa se realmente existe uma rede de petri para executar as funções
+                if(places.length===0||transitions.length===0){
+                    invTransitionContainer.innerHTML = '<p>There is no Petri Net for analysis.</p>';
+                    return;
+                }else{
+                    const transitionInv = findTransitionInvariants(C);
+    
+                    invTransitionContainer.innerHTML = ''; // Limpa o conteúdo anterior
+        
+                    if (transitionInv.length === 0) {
+                        invTransitionContainer.innerHTML = '<p>No invariants found.</p>';
+                        return;
+                    }
+                    
+                    // Adiciona os vetores gráficos dos invariantes na modal
+                    transitionInv.forEach(inv => {
+                        const invRow = document.createElement('p');
+                        invRow.textContent = `[${inv.join(' ')}]`;
+                        invRow.style.textAlign = 'center';
+                        invTransitionContainer.appendChild(invRow);
+                    });
+                }
+            },
+            "invTransition-modal-close": () => {
+                invTransitionModal.close();
+            },
+            "invTransition-close": () => {
+                invTransitionModal.close();
+            },
+        };
+    
+        for (const [btnId, handler] of Object.entries(handlers)) {
+            const btn = document.getElementById(btnId);
+            if (!btn) {
+                console.error(`Button ${btnId} not found.`);
+                continue;
+            }
+            btn.onclick = handler;
+        }
+    }
+
     bindSimulationButtons() {
         const handlers = {
             start: () => {
@@ -264,7 +758,6 @@ export class Application {
         let movingScreenOffset;
         const handlers = {
             mousedown: (evt) => {
-                console.log(evt);
                 if (!this.editor)
                     return;
                 if (evt.ctrlKey || evt.button === 2) {
@@ -323,7 +816,6 @@ export class Application {
         document.body.addEventListener('keydown', (evt) => {
             if (!this.editor)
                 return;
-            console.log();
             if (evt.target.tagName !== "BODY")
                 return;
             if (this.simulator)
@@ -341,4 +833,6 @@ export class Application {
             evt.preventDefault();
         }, false);
     }
+
+
 }

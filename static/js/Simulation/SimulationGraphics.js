@@ -7,7 +7,8 @@ const STEP_INTERVAL = 200;
 const TRANS_ENABLE_COLOR = '#04c200';
 const TRANS_FIRE_COLOR = 'red';
 export async function delay(ms) {
-    return new Promise(resolve => {
+    return new Promise( 
+        resolve => {
         setTimeout(() => { resolve(undefined); }, ms);
     });
 }

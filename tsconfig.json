@@ -2,9 +2,10 @@
     "compilerOptions": {
         "module": "es2022",
         "target": "esnext",
-        "watch": true,
+        //"watch": true,
         "strict": true,
         "outDir": "static/js",
+        //"allowImportingTsExtensions": true,
         "forceConsistentCasingInFileNames": true
     },
     "include": ["ts/**/*"]

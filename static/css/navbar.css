@@ -36,6 +36,11 @@
     cursor: pointer;
 }
 
+.dropdown a {
+    float:  none;
+    
+}
+
 .navbar a:hover, .dropdown:hover .dropbtn, .navbar button:hover {
     background-color: var(--color-bg-focus);
 }
