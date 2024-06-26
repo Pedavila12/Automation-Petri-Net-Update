@@ -1,8 +1,7 @@
 class Place {
-    constructor(name, marking = 0, isInhibitor = false) {
+    constructor(name, marking = 0) {
         this.name = name;
         this.marking = marking;
-        this.isInhibitor = isInhibitor;
     }
     toString() {
         return `${this.name}: ${this.marking}`;
@@ -22,15 +21,40 @@ class PetriClass {
     fireableTransitions() {
         try {
             return this.transitions.filter((transition) => {
-                return Object.keys(transition.inputPlaces).every((place) => {
+                const allPlaces = new Set([
+                    ...Object.keys(transition.inputPlaces),
+                    ...Object.keys(transition.testPlace || {}),
+                    ...Object.keys(transition.inhibitorPlaces || {}),
+                ]);
+                return Array.from(allPlaces).every((place) => {
                     const placeMarking = this.places[place].marking;
-                    const requiredMarking = transition.inputPlaces[place];
-
-                    if (transition.isTest) {
-                        return placeMarking >= requiredMarking;
-                    } else {
-                        return placeMarking >= requiredMarking && !this.places[place].isInhibitor;
+                    //console.log("Passou aqui");
+                    //console.log(placeMarking);
+                    // Verificar arcos de entrada normais
+                    if (transition.inputPlaces[place] !== undefined) {
+                        const requiredMarking = transition.inputPlaces[place];
+                        if (placeMarking < requiredMarking) {
+                            return false;
+                        }
                     }
+
+                    // Verificar arcos de teste
+                    if (transition.testPlace && transition.testPlace[place] !== undefined) {
+                        const testRequiredMarking = transition.testPlace[place];
+                        if (placeMarking < testRequiredMarking) {
+                            return false;
+                        }
+                    }
+
+                    // Verificar arcos inibidores
+                    if (transition.inhibitorPlaces && transition.inhibitorPlaces[place] !== undefined) {
+                        const inhibitorRequiredMarking = transition.inhibitorPlaces[place];
+                        if (placeMarking == inhibitorRequiredMarking) {
+                            return false;
+                        }
+                    }
+
+                    return true;
                 });
             });
         } catch (error) {
@@ -131,11 +155,9 @@ function reachabilityTree(net, currentState, visitedStates = new Set(), depth = 
 //Onde os nodes são separados entre mais e filhos, assim simplificando bem a analise pois podemos ver qual marcação deriva qual após as transições dispararem
 function interpretReachabilityTree(treeData) {
     class Node {
-        constructor(state, transition, isTested, isInhibited, id) {
+        constructor(state, transition, id) {
             this.state = state;
             this.transition = transition;
-            this.isTested = isTested;
-            this.isInhibited = isInhibited;
             this.children = [];
             this.id = id;
         }
@@ -186,10 +208,8 @@ function interpretReachabilityTree(treeData) {
     const createNode = (nodeData, parentTransition) => {
         const state = nodeData[0];
         const transition = parentTransition || null;
-        const isTested = transition ? transition.isTest : false;
-        const isInhibited = transition ? transition.isInhibitor : false;
         const id = idGenerator.getIdForState(state);
-        const parentNode = new Node(state, transition, isTested, isInhibited, id);
+        const parentNode = new Node(state, transition, id);
         //Verifica se não é uma marcação de fim de ramo
         if (nodeData[1] == "Deadlock") {
             // Se 'Deadlock' estiver presente, cria um nó filho com o estado 'Deadlock'
@@ -200,9 +220,7 @@ function interpretReachabilityTree(treeData) {
             for (let i = 1; i < nodeData.length; i++) {
                 const transitionData = nodeData[i];
                 const childState = applyTransition(parentNode.state, transitionData);
-                const childIsTested = transitionData.isTest || false;
-                const childIsInhibited = transitionData.isInhibitor || false;
-                const childNode = new Node(childState, transitionData, childIsTested, childIsInhibited, idGenerator.getIdForState(childState));
+                const childNode = new Node(childState, transitionData,idGenerator.getIdForState(childState));
                 parentNode.children.push(childNode);
                 createNode(transitionData, transitionData); // Recursivamente cria os filhos do nó filho
             }
