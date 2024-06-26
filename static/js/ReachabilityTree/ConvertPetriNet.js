@@ -1,18 +1,19 @@
 //Classe dos lugares
 class Place {
-    constructor(name, marking = 0, isInhibitor = false, id) {
+    constructor(name, marking = 0, placeType, id) {
         this.name = name;
         this.marking = marking;
-        this.isInhibitor = isInhibitor;
+        this.placeType = placeType;
         this.id = id;
     }
 }
 //Classe das transições
 class Transition {
-    constructor(inputPlaces, outputPlaces, isTest = false, id) {
+    constructor(inputPlaces, outputPlaces, testPlace, inhibitorPlaces, id) {
         this.inputPlaces = inputPlaces;
         this.outputPlaces = outputPlaces;
-        this.isTest = isTest;
+        this.testPlace = testPlace;
+        this.inhibitorPlaces = inhibitorPlaces;
         this.id = id;
     }
     toString() {
@@ -36,7 +37,8 @@ function ConvertPetriNet(netData) {
     netData.transitions.forEach(transData => {
         const inputArcs = {};
         const outputArcs = {};
-
+        const testArcs = {};
+        const inhibitorArcs = {};
         // Mapeia os arcoss de entrada (input)
         netData.arcs
             .filter(arc => arc.transId === transData.id && arc.arcType === 'Input')
@@ -62,8 +64,32 @@ function ConvertPetriNet(netData) {
                 }
             });
 
+        // Mapeia os arcos de teste (test)
+        netData.arcs
+            .filter(arc => arc.transId === transData.id && arc.arcType === 'Test')
+            .forEach(arc => {
+                const place = places.find(place => place.id === arc.placeId);
+                if (place) {
+                    testArcs[place.name] = parseInt(arc.weight);
+                } else {
+                    console.error(`Lugar não encontrado para o ID: ${arc.placeId}`);
+                }
+            });
+        
+        // Mapeia os arcos Inibidores (Inhibitor)
+        netData.arcs
+        .filter(arc => arc.transId === transData.id && arc.arcType === 'Inhibitor')
+        .forEach(arc => {
+            const place = places.find(place => place.id === arc.placeId);
+            if (place) {
+                inhibitorArcs[place.name] = parseInt(arc.weight);
+            } else {
+                console.error(`Lugar não encontrado para o ID: ${arc.placeId}`);
+            }
+        });
+
         // Mapeia os arcoss de teste
-        const hasTestArc = netData.arcs.some(arc => arc.transId === transData.id && arc.arcType === 'Test');
+        //const hasTestArc = netData.arcs.some(arc => arc.transId === transData.id && arc.arcType === 'Test');
 
         const transitionNumber = parseInt(transData.name.replace(/\D/g, ''), 10);
         
@@ -71,7 +97,8 @@ function ConvertPetriNet(netData) {
         const transition = new Transition(
             inputArcs,
             outputArcs,
-            hasTestArc,
+            testArcs,
+            inhibitorArcs,
             transitionNumber
         );
 

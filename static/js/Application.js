@@ -250,10 +250,8 @@ export class Application {
 
                 //Chama a rede de petri desenhada em tela
                 const netData = this.editor.net.getNetData();
-
                 //Converte a rede de petri para o formato utilizando no render
                 const customFormatNet = ConvertPetriNet(netData);
-
                 //Definir os lugares e transições para chamar as funções de tratamento e renderização da arvore de alcansabilidade
                 const places = customFormatNet.places;
                 const transitions = customFormatNet.transitions;
@@ -262,8 +260,8 @@ export class Application {
                     places.map((place) => [place.name, place.marking])
                 );
                 const tree = reachabilityTree(petriClass, initialState);
+                console.log(tree);
                 const interpretedTree = interpretReachabilityTree(tree);
-
                 function findInfinityPseudoNode(interpretedTree) {
                     for (let node of interpretedTree) {
                         if(node.children[0].transition === "InfinityPseudoNode"){
