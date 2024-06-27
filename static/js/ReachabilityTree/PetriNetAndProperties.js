@@ -154,6 +154,7 @@ function reachabilityTree(net, currentState, visitedStates = new Set(), depth = 
 //ela recebe a rede de petri saida depois do tratamento da função reachabilityTree e nos coloca em um formato mais direto para analise
 //Onde os nodes são separados entre mais e filhos, assim simplificando bem a analise pois podemos ver qual marcação deriva qual após as transições dispararem
 function interpretReachabilityTree(treeData) {
+    console.log(treeData);
     class Node {
         constructor(state, transition, id) {
             this.state = state;
@@ -162,16 +163,20 @@ function interpretReachabilityTree(treeData) {
             this.id = id;
         }
     }
-    //Essa função cria um ID para cada a marcação estraindo os valores de cada marcação e montando o formato apresentado em tenha de Mx{y,y,y,y...}
+
     class IdGenerator {
         constructor() {
             this.counter = 0;
             this.stateToIdMap = new Map();
         }
-
+    
         getIdForState(state) {
+            if (state === undefined) {
+                console.error('State cannot be undefined');
+                return null;
+            }
+    
             const stateString = JSON.stringify(state);
-
             if (!this.stateToIdMap.has(stateString)) {
                 const markings = state && typeof state === 'object' ? Object.values(state) : [];
                 const id = `M${this.counter++} {${markings}}`;
@@ -179,10 +184,8 @@ function interpretReachabilityTree(treeData) {
             }
             return this.stateToIdMap.get(stateString);
         }
-
-
     }
-
+    
     //Lógica de disparo de transições
     function applyTransition(state, transitionData) {
         const inputPlaces = transitionData.inputPlaces;
