@@ -278,6 +278,7 @@ export class Application {
                     treeContainer.style.fontSize = '20pt';
                     treeContainer.style.textAlign = 'center'; 
                 }else{
+                    console.log(interpretedTree);
                     renderReachabilityTree(interpretedTree);
                 }
 

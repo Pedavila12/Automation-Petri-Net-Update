@@ -1,6 +1,6 @@
 function renderReachabilityTree(interpretedTree) {
     let width = 2000;
-    let height = 2000;
+    let height = 5000;
     const margin = { top: 40, right: 20, bottom: 20, left: 20 };
     let angle = 0;
 
@@ -46,8 +46,8 @@ function renderReachabilityTree(interpretedTree) {
                 if (existingNode && hasChildren) {
                     d.x = existingNode.x;
                     d.y = existingNode.y;
-
-                } else {
+                }
+                else {
                     //Função para definir a posição dos nodes a serem plotados em tela 
                     let distance = 200;
 
@@ -126,13 +126,17 @@ function renderReachabilityTree(interpretedTree) {
                 const key = JSON.stringify(d.data.state);
                 const existingNode = nodeMap.get(key);
                 const hasChildren = d.children && d.children.length > 0;
-
+                console.log(d.data.id);
                 // Adiciona o texto apenas se o nó não foi renderizado anteriormente
                 if (existingNode && hasChildren) {
                     return `${JSON.stringify(d.data.id)}`;
                 }
-
+                if(existingNode){
+                    return `${JSON.stringify(d.data.id)}`;
+                }
+               
                 return "";
+                
 
             });
 
@@ -143,7 +147,7 @@ function renderReachabilityTree(interpretedTree) {
             .append("marker")
             .attr("id", "arrowhead")
             .attr("viewBox", "-0 -5 10 10")
-            .attr("refX", 18)
+            .attr("refX", 5)
             .attr("refY", 0)
             .attr("orient", "auto")
             .attr("markerWidth", 10)
@@ -153,6 +157,8 @@ function renderReachabilityTree(interpretedTree) {
             .attr("d", "M 0,-5 L 10 ,0 L 0,5")
             .attr("fill", "#000")
             .style("stroke", "none");
+
+
 
         //Definição do grupo que vai ser plotado dos links
         const linkGroups = svg
@@ -167,20 +173,58 @@ function renderReachabilityTree(interpretedTree) {
             .append("g")
             .attr("class", `link link-${index}`);
 
+        
+        // Adiciona a linha ao grupo
+        // linkGroups
+        //     .append("line")
+        //     .attr("x1", (d) => {
+        //         const sourceKey = JSON.stringify(d.source.data.state);
+        //         const sourceNode = nodeMap.get(sourceKey);
+        //         return sourceNode ? sourceNode.x : d.x;
+        //     })
+        //     .attr("y1", (d) => d.source.y + 30)
+        //     .attr("x2", (d) => d.target.x)
+        //     .attr("y2", (d) => d.target.y)
+        //     .style("stroke-width", 3) // Defina a largura da linha como 3 (ou o valor desejado)
+        //     .attr("marker-end", "url(#arrowhead)"); // Adiciona a seta ao final do link
+
         // Adiciona a linha ao grupo
         linkGroups
-            .append("line")
-            .attr("x1", (d) => {
-                const sourceKey = JSON.stringify(d.source.data.state);
-                const sourceNode = nodeMap.get(sourceKey);
-                return sourceNode ? sourceNode.x : d.x;
-            })
-            .attr("y1", (d) => d.source.y + 30)
-            .attr("x2", (d) => d.target.x)
-            .attr("y2", (d) => d.target.y)
-            .style("stroke-width", 3) // Defina a largura da linha como 3 (ou o valor desejado)
-            .attr("marker-end", "url(#arrowhead)"); // Adiciona a seta ao final do link
-
+        .append("line")
+        .attr("x1", (d) => {
+            const sourceKey = JSON.stringify(d.source.data.state);
+            const sourceNode = nodeMap.get(sourceKey);
+            return sourceNode ? sourceNode.x : d.x;
+        })
+        .attr("y1", (d) => d.source.y + 30)
+        .attr("x2", (d) => {
+            const targetX = d.target.x;
+            const targetY = d.target.y;
+            const radius = 50;  // Raio do círculo
+            
+            const dx = targetX - d.source.x;
+            const dy = targetY - (d.source.y + 30);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const unitX = dx / distance;
+            const unitY = dy / distance;
+            
+            return targetX - unitX * radius;
+        })
+        .attr("y2", (d) => {
+            const targetX = d.target.x;
+            const targetY = d.target.y;
+            const radius = 50;  // Raio do círculo
+            
+            const dx = targetX - d.source.x;
+            const dy = targetY - (d.source.y + 30);
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            const unitX = dx / distance;
+            const unitY = dy / distance;
+            
+            return targetY - unitY * radius;
+        })
+        .style("stroke-width", 3) // Defina a largura da linha como 3 (ou o valor desejado)
+        .attr("marker-end", "url(#arrowhead)"); // Adiciona a seta ao final do link
         // Adiciona o texto no meio da seta.
         linkGroups
             .append("text")
