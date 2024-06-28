@@ -126,7 +126,7 @@ function renderReachabilityTree(interpretedTree) {
                 const key = JSON.stringify(d.data.state);
                 const existingNode = nodeMap.get(key);
                 const hasChildren = d.children && d.children.length > 0;
-                console.log(d.data.id);
+                //console.log(d.data.id);
                 // Adiciona o texto apenas se o nó não foi renderizado anteriormente
                 if (existingNode && hasChildren) {
                     return `${JSON.stringify(d.data.id)}`;

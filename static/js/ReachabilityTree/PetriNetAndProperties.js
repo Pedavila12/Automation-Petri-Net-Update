@@ -1,7 +1,8 @@
 class Place {
-    constructor(name, marking = 0) {
+    constructor(name, marking = 0,placeType) {
         this.name = name;
         this.marking = marking;
+        this.placeType = placeType;
     }
     toString() {
         return `${this.name}: ${this.marking}`;
@@ -13,7 +14,7 @@ class PetriClass {
     constructor(places, transitions) {
         this.places = {};
         places.forEach((place) => {
-            this.places[place.name] = new Place(place.name, place.marking);
+            this.places[place.name] = new Place(place.name, place.marking, place.placeType);
         });
         this.transitions = transitions;
     }
@@ -28,33 +29,28 @@ class PetriClass {
                 ]);
                 return Array.from(allPlaces).every((place) => {
                     const placeMarking = this.places[place].marking;
-                    //console.log("Passou aqui");
-                    //console.log(placeMarking);
-                    // Verificar arcos de entrada normais
+
                     if (transition.inputPlaces[place] !== undefined) {
                         const requiredMarking = transition.inputPlaces[place];
                         if (placeMarking < requiredMarking) {
                             return false;
                         }
                     }
-
-                    // Verificar arcos de teste
                     if (transition.testPlace && transition.testPlace[place] !== undefined) {
                         const testRequiredMarking = transition.testPlace[place];
                         if (placeMarking < testRequiredMarking) {
                             return false;
                         }
                     }
-
-                    // Verificar arcos inibidores
                     if (transition.inhibitorPlaces && transition.inhibitorPlaces[place] !== undefined) {
                         const inhibitorRequiredMarking = transition.inhibitorPlaces[place];
                         if (placeMarking == inhibitorRequiredMarking) {
                             return false;
                         }
                     }
-
+                    
                     return true;
+                    
                 });
             });
         } catch (error) {
@@ -63,6 +59,8 @@ class PetriClass {
     }
 
     fireTransition(transition) {
+
+        
         for (const place in transition.inputPlaces) {
             this.places[place].marking -= transition.inputPlaces[place];
         }
@@ -136,6 +134,7 @@ function reachabilityTree(net, currentState, visitedStates = new Set(), depth = 
             net.transitions
         );
         netCopy.fireTransition(transition);
+        
         const newState = Object.fromEntries(
             Object.entries(netCopy.places).map(([p, place]) => [
                 p,
@@ -154,7 +153,7 @@ function reachabilityTree(net, currentState, visitedStates = new Set(), depth = 
 //ela recebe a rede de petri saida depois do tratamento da função reachabilityTree e nos coloca em um formato mais direto para analise
 //Onde os nodes são separados entre mais e filhos, assim simplificando bem a analise pois podemos ver qual marcação deriva qual após as transições dispararem
 function interpretReachabilityTree(treeData) {
-    console.log(treeData);
+    //console.log(treeData);
     class Node {
         constructor(state, transition, id) {
             this.state = state;
