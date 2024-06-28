@@ -256,11 +256,13 @@ export class Application {
                 const places = customFormatNet.places;
                 const transitions = customFormatNet.transitions;
                 const petriClass = new PetriClass(places, transitions);
+                //console.log("Lugares: ",places);
+                //console.log("Arvore classe: ",petriClass);
                 const initialState = Object.fromEntries(
                     places.map((place) => [place.name, place.marking])
                 );
                 const tree = reachabilityTree(petriClass, initialState);
-                console.log(tree);
+                //console.log("Arvore profundidade: ", tree);
                 const interpretedTree = interpretReachabilityTree(tree);
                 function findInfinityPseudoNode(interpretedTree) {
                     for (let node of interpretedTree) {
@@ -278,7 +280,7 @@ export class Application {
                     treeContainer.style.fontSize = '20pt';
                     treeContainer.style.textAlign = 'center'; 
                 }else{
-                    console.log(interpretedTree);
+                    //console.log(interpretedTree);
                     renderReachabilityTree(interpretedTree);
                 }
 
