@@ -262,7 +262,7 @@ export class Application {
                     places.map((place) => [place.name, place.marking])
                 );
                 const tree = reachabilityTree(petriClass, initialState);
-                //console.log("Arvore profundidade: ", tree);
+
                 const interpretedTree = interpretReachabilityTree(tree);
                 function findInfinityPseudoNode(interpretedTree) {
                     for (let node of interpretedTree) {

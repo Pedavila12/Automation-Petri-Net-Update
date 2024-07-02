@@ -65,8 +65,10 @@ function ConvertPetriNet(netData) {
 
                  // Verificar se é do tipo BOOL e não possui arco inibidor
                  if (place.placeType === 'BOOL' && 
-                     !netData.arcs.some(inhibitorArc => inhibitorArc.transId === transData.id && inhibitorArc.arcType === 'Inhibitor')) {
-                     inhibitorArcs[place.name] = place.marking === 0 ? 1 : place.marking;
+                    !netData.arcs.some(inhibitorArc => inhibitorArc.transId === transData.id && inhibitorArc.arcType === 'Inhibitor')) {
+                    inhibitorArcs[place.name] = place.marking === 0 ? 1 : place.marking;
+                 }else if(place.placeType === 'BOOL' && netData.arcs.some(inhibitorArc => inhibitorArc.transId === transData.id && inhibitorArc.arcType === 'Inhibitor')){
+                    inhibitorArcs[place.name] = place.marking === 0 ? 1 : place.marking;
                  }
              } else {
                  console.error(`Lugar não encontrado para o ID: ${arc.placeId}`);
